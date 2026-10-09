@@ -1,0 +1,9 @@
+TIMECORE — PWA ANDROID / IPHONE
+
+1. Subir index.html, style.css, script.js, sync.js, sw.js, manifest.webmanifest e iconos a GitHub Pages (misma carpeta). NO subir servidor-opcional.
+2. Android: abrir enlace HTTPS en Chrome > menú > Instalar aplicación / Añadir a pantalla principal.
+3. iPhone: abrir en Safari > Compartir > Añadir a pantalla de inicio.
+4. Sin configurar servidor: datos locales independientes por teléfono, con uso offline tras primera carga.
+5. Para sincronizar: desplegar servidor-opcional/server.js en un servidor Node con HTTPS y variable TIMECORE_KEY, luego poner URL HTTPS y clave en panel de la jefa. Requiere hospedaje Node; GitHub Pages no ejecuta servidores.
+6. ATENCIÓN: sincronización y contraseñas son un PROTOTIPO; no es apto para uso real con empleados, PIN y nóminas. El servidor utiliza una clave compartida, no verifica roles, no cifra credenciales almacenadas y no maneja adecuadamente conflictos entre dispositivos. Para producción hay que implementar autenticación individual, hashes de PIN, control de acceso en servidor, base de datos transaccional y auditoría.
+7. No hay APK compilado en este paquete: PWA instalable en Android/iPhone. APK Android nativo requiere compilar un contenedor con Android Studio/Capacitor.
