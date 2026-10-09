@@ -1,0 +1,10 @@
+TIMECORE — VERSION 50 METROS (CORRECCION DE CACHE)
+
+1. En GitHub, reemplaza TODOS los archivos de la raiz por los de este ZIP.
+2. Espera a que GitHub Pages publique.
+3. Cierra la pestaña y abre de nuevo el sitio; si hace falta, borra datos del sitio / PWA instalada.
+4. Verifica que bajo Marcar entrada diga «50 m».
+5. La lectura GPS del empleado sigue siendo necesaria. Con precision ±149 m no se puede confirmar un radio de 50 m.
+6. No cambies las reglas de Firebase si ya publicaste las del ZIP anterior.
+
+Esta actualizacion cambia las referencias de scripts para evitar que la pagina antigua se quede en cache.
