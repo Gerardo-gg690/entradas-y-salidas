@@ -1,0 +1,9 @@
+TimeCore - Corrección de visualización de personal para la jefa.
+
+La pantalla principal de la administradora ahora muestra tarjetas con los empleados activos que llegan desde Firestore. No permite marcar por ellos desde esas tarjetas. Para salidas manuales, use el Panel de la jefa.
+
+Reemplaza los archivos del repositorio de GitHub con el contenido de este ZIP. No borres documentos de Firebase ni cambies las reglas si ya están publicadas y funcionan.
+
+Si no se muestran empleados, verifica que la cuenta administradora tenga el UID permitido por firestore.rules, que la conexión esté activa y que los documentos employees tengan active=true.
+
+Advertencia: la comprobación GPS se realiza en el navegador y no impide la falsificación de ubicación; los cálculos de planilla son estimaciones.
