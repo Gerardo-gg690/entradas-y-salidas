@@ -1,0 +1,19 @@
+TIMECORE - VERSIÓN FIREBASE (PRUEBAS)
+
+1. En Firebase Console > Firestore > Reglas, pega TODO el contenido de firestore.rules y pulsa PUBLICAR.
+2. Comprueba que en Authentication está habilitado Correo electrónico/Contraseña y que la cuenta administradora ya existe con UID tFUODWGOkXeCm18fSO1bKZCm3ms2.
+3. Publica TODOS los archivos de este ZIP en GitHub Pages, reemplazando los anteriores. Mantén firebase-config.js, firebase-bridge.js y script.js en la misma carpeta que index.html.
+4. Abre el sitio desde https:// (no desde un archivo local). Inicia sesión como jefa con el CORREO y contraseña que creaste en Firebase.
+5. Desde Personal, crea un empleado de PRUEBA con nombre, usuario (ej. prueba01) y contraseña de 6+ caracteres. Su acceso es usuario prueba01, no correo.
+6. En otro dispositivo o navegador privado, inicia sesión con el empleado y marca entrada. Comprueba que la jefa vea el registro.
+
+NOTAS IMPORTANTES
+- Requiere internet; no hay cola offline segura de marcaciones.
+- El usuario se transforma internamente a usuario@timecore.invalid para Firebase Auth. No uses un nombre que contenga @ al crear empleados.
+- La cuenta administradora inicia sesión con su correo REAL de Firebase.
+- Las contraseñas las maneja Firebase Authentication, no se guardan en Firestore ni localStorage por la aplicación.
+- Desactivar empleado bloquea nuevas marcaciones, pero NO elimina su cuenta de Authentication. Para revocar inmediatamente su acceso, deshabilita también el usuario desde Firebase Authentication > Usuarios.
+- Las marcas de hora se crean con el reloj del dispositivo y NO son antifraude. La nómina es una estimación, no un cálculo legal certificado.
+- No uses datos laborales reales sin probar y revisar las reglas y los controles de horario.
+- Si Firebase Authentication rechaza el dominio de tu web, agrégalo en Authentication > Configuración > Dominios autorizados.
+- Si la pantalla muestra un error de permisos, revisa que las reglas se publicaron correctamente.

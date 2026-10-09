@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() { return request.auth != null; }
+    function admin() { return signed() && request.auth.uid == 'tFUODWGOkXeCm18fSO1bKZCm3ms2'; }
+    function activeEmployee(uid) {
+      return signed() && request.auth.uid == uid
+        && exists(/databases/$(database)/documents/employees/$(uid))
+        && get(/databases/$(database)/documents/employees/$(uid)).data.active == true;
+    }
+    match /employees/{uid} {
+      allow read: if admin() || (signed() && request.auth.uid == uid);
+      allow create: if admin() && request.resource.data.keys().hasOnly(['name','dept','username','active','createdAt']) && request.resource.data.active == true;
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active']);
+      allow delete: if false;
+    }
+    match /attendance/{id} {
+      allow read: if admin() || (signed() && resource.data.employeeId == request.auth.uid);
+      allow create: if activeEmployee(request.auth.uid)
+        && id == request.auth.uid + '_' + request.resource.data.date
+        && request.resource.data.employeeId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['employeeId','date','clock_in','clock_out','createdAt'])
+        && request.resource.data.clock_out == null
+        && request.resource.data.clock_in is string
+        && request.resource.data.date is string
+        && request.resource.data.createdAt == request.time;
+      allow update: if activeEmployee(request.auth.uid)
+        && resource.data.employeeId == request.auth.uid
+        && resource.data.clock_out == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out'])
+        && request.resource.data.clock_out is string;
+      allow delete: if false;
+    }
+    match /settings/{id} {
+      allow read: if admin();
+      allow write: if admin() && id == 'payroll';
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
