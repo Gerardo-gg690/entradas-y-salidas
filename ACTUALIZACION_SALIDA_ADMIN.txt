@@ -1,0 +1,10 @@
+TimeCore - Salida manual por la jefa
+
+1. Publica el contenido de firestore.rules en Firebase Console > Firestore > Reglas. Subirlo a GitHub NO publica reglas.
+2. Sube todos los archivos de este ZIP descomprimidos a la raiz del repositorio GitHub Pages.
+3. Actualiza la pagina (Ctrl+F5) y entra con la cuenta de la jefa.
+4. En Pago diario por empleado, los turnos con entrada y sin salida muestran Registrar salida.
+5. La jefa ingresa fecha/hora REAL y motivo. No se permite registrar dos salidas.
+6. Empleados siguen marcando entrada/salida con el limite GPS de 100 metros.
+
+Advertencias: los horarios de marcacion de empleados provienen del reloj del dispositivo, no del servidor; el GPS web puede falsificarse; la nomina es estimativa. No utilizar como sistema de control laboral antifraude sin validacion de servidor y pruebas.

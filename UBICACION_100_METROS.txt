@@ -1,0 +1,11 @@
+TIMECORE — RADIO DE MARCACION 100 METROS
+
+Local: Bon House
+Centro: 13.9871804, -89.5491599
+Radio: 100 metros
+
+La app solicita ubicación precisa antes de marcar entrada o salida. Rechaza ubicaciones cuyo distancia + margen de precisión supera los 100 metros. No guarda las coordenadas del empleado.
+
+IMPORTANTE: el control se ejecuta en JavaScript del navegador y puede ser eludido por un usuario con conocimientos técnicos. Las reglas de Firestore actuales NO comprueban geolocalización y permiten a un usuario autenticado escribir directamente sus marcaciones. No es una solución antifraude para nómina real. Se necesita un backend de confianza para una verificación adicional y registros con hora de servidor.
+
+Para actualizar GitHub Pages: extrae y sube todos los archivos de este ZIP a la raiz del repositorio, reemplazando los existentes. Mantén las reglas publicadas en Firebase; este ZIP no cambia firestore.rules. Prueba permisos de ubicación en HTTPS desde un teléfono con GPS preciso.

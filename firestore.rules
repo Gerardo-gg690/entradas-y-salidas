@@ -24,11 +24,20 @@ service cloud.firestore {
         && request.resource.data.clock_in is string
         && request.resource.data.date is string
         && request.resource.data.createdAt == request.time;
-      allow update: if activeEmployee(request.auth.uid)
+      allow update: if (admin() && resource.data.clock_out == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out','exitSource','exitEditedBy','exitEditedAt','exitReason'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['clock_out','exitSource','exitEditedBy','exitEditedAt','exitReason'])
+        && request.resource.data.exitSource == 'admin'
+        && request.resource.data.exitEditedBy == request.auth.uid
+        && request.resource.data.exitEditedAt == request.time
+        && request.resource.data.exitReason is string
+        && request.resource.data.exitReason.size() >= 5
+        && request.resource.data.clock_out is string)
+        || (activeEmployee(request.auth.uid)
         && resource.data.employeeId == request.auth.uid
         && resource.data.clock_out == null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out'])
-        && request.resource.data.clock_out is string;
+        && request.resource.data.clock_out is string);
       allow delete: if false;
     }
     match /settings/{id} {
