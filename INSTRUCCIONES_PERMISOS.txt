@@ -1,0 +1,10 @@
+TIMECORE - PERMISOS SIN GOCE DE SUELDO
+
+1. Sube a GitHub los archivos del ZIP, reemplazando los anteriores.
+2. En Firebase > Firestore Database > Reglas, reemplaza el contenido por firestore.rules y pulsa Publicar.
+3. Cierra y abre la web para cargar la version nueva.
+4. Prueba entrada normal, salida con permiso, entrada con permiso y salida normal.
+5. El tiempo fuera con permiso no se paga: se descuenta de las horas normales y extras calculadas.
+6. No borres las colecciones de Firebase.
+
+IMPORTANTE: Los calculos de nomina son estimaciones y deben validarse con la jefa y la normativa laboral. La geolocalizacion y hora del navegador pueden manipularse. La salida administrativa durante un permiso abierto requiere revision manual; se recomienda cerrar el permiso antes de finalizar el turno.

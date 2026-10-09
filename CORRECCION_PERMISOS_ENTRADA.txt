@@ -1,0 +1,17 @@
+CORRECCIÓN DE PERMISOS DE ENTRADA - TIMECORE
+
+Problema: el empleado consulta attendance/UID_FECHA antes de que exista. La regla anterior dependía de resource.data.employeeId, que no está disponible cuando el documento no existe.
+
+Solución: permitir leer únicamente el documento attendance/UID_AAAA-MM-DD propio, incluso si todavía no existe.
+
+PASOS:
+1. Abre firestore.rules de este ZIP.
+2. Copia TODO su contenido en Firebase Console > Firestore > Reglas.
+3. Pulsa Publicar.
+4. Cierra sesión en TimeCore y vuelve a entrar desde el teléfono.
+5. Intenta marcar entrada dentro del radio permitido y con GPS preciso.
+
+No hace falta volver a subir archivos a GitHub: la corrección está solo en las reglas de Firebase.
+No cambies las reglas por allow read, write: if true.
+
+NOTA: No se ha probado contra el proyecto Firebase real; comprueba primero con un empleado de prueba.
