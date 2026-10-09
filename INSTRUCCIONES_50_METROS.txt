@@ -1,0 +1,18 @@
+TIMECORE — BON HOUSE — RADIO 50 METROS
+
+Se usa como centro fijo del local: 13.9871804, -89.5491599.
+CONFIRMAR estas coordenadas antes de usar en producción.
+
+Se comprueba la posición del teléfono contra el centro fijo del local.
+El sistema intenta hasta cuatro lecturas frescas con alta precisión.
+No acepta lecturas cuyo margen de error no permita confirmar la presencia dentro de 50 m.
+Con un GPS de ±149 m no es posible garantizar que el teléfono esté dentro de 50 m.
+
+INSTALACIÓN
+1. Subir a GitHub los archivos de esta carpeta, reemplazando los anteriores.
+2. Esperar publicación de GitHub Pages y recargar la página (o cerrar y reabrir la PWA).
+3. No es necesario cambiar las reglas de Firestore para este ajuste.
+4. Probar desde el local con ubicación precisa activada y conexión Wi-Fi.
+
+ADVERTENCIA: La verificación de geolocalización hecha en JavaScript no impide manipulaciones
+por un usuario técnicamente avanzado; no es prueba infalible de asistencia.

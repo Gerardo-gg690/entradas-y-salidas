@@ -1,5 +1,7 @@
 const $=s=>document.querySelector(s);
 const ADMIN_UID='tFUODWGOkXeCm18fSO1bKZCm3ms2';
+// Centro fijo de Bon House: comprobar coordenadas antes de usar en producción.
+const WORKPLACE=Object.freeze({latitude:13.9871804,longitude:-89.5491599,radiusMeters:50});
 const todayKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const defaults={salary:408,halfSalary:204,paidDays:30,normalHours:8,extraRate:3};
 let state={employees:[],attendance:[],config:{...defaults}},selectedDate=todayKey(),currentUser=null,profile=null,unsubs=[];
@@ -43,23 +45,37 @@ function renderEmployees(){const grid=$('#employeeGrid');grid.innerHTML='';$('#e
  const actions=card.querySelector('.tc-actions');
  const normal=document.createElement('button');normal.type='button';normal.textContent=done?'Turno completado':!started?'Marcar entrada':paused?'Salida normal no disponible durante el permiso':'Marcar salida';normal.disabled=done||paused;normal.onclick=markAttendance;actions.append(normal);
  if(started&&!done){const permission=document.createElement('button');permission.type='button';permission.textContent=paused?'Entrada con permiso':'Salida con permiso';permission.style.marginTop='8px';permission.style.background=paused?'#117d68':'#a65b24';permission.onclick=()=>markPermission(paused?'return':'leave');actions.append(permission)}
- const info=document.createElement('p');info.textContent='Marcaciones dentro de 100 m de Bon House. Los permisos son sin goce de sueldo.';info.style.fontSize='12px';info.style.opacity='.75';card.append(info);grid.append(card)}
+ const info=document.createElement('p');info.textContent='Marcaciones dentro de 50 m de Bon House. Los permisos son sin goce de sueldo.';info.style.fontSize='12px';info.style.opacity='.75';card.append(info);grid.append(card)}
 
 function metersBetween(aLat,aLon,bLat,bLon){const rad=Math.PI/180,R=6371000;const dLat=(bLat-aLat)*rad,dLon=(bLon-aLon)*rad;const h=Math.sin(dLat/2)**2+Math.cos(aLat*rad)*Math.cos(bLat*rad)*Math.sin(dLon/2)**2;return 2*R*Math.asin(Math.min(1,Math.sqrt(h)))}
 async function verifyWorkplace(){
   if(!navigator.geolocation)throw new Error('Este dispositivo no permite obtener la ubicación.');
   if(!window.isSecureContext)throw new Error('Abre TimeCore desde su enlace HTTPS para usar la ubicación.');
-  showError('Verificando ubicación cerca de Bon House…');
-  const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:18000,maximumAge:0}));
-  const {latitude,longitude,accuracy}=pos.coords;
-  if(![latitude,longitude,accuracy].every(Number.isFinite))throw new Error('La ubicación recibida no es válida.');
-  const distance=metersBetween(latitude,longitude,WORKPLACE.latitude,WORKPLACE.longitude);
-  // Criterio conservador: distancia medida + margen de error debe quedar dentro de los 100 m.
-  if(distance+accuracy>WORKPLACE.radiusMeters){
-    if(distance<=WORKPLACE.radiusMeters)throw new Error(`Estás a unos ${Math.round(distance)} m del local, pero el GPS tiene ±${Math.round(accuracy)} m de margen. Activa ubicación precisa y vuelve a intentar al aire libre.`);
-    throw new Error(`Marcación bloqueada: estás aproximadamente a ${Math.round(distance)} m de Bon House. El máximo es ${WORKPLACE.radiusMeters} m.`);
+  showError('Comprobando ubicación respecto a Bon House (radio 50 m)…');
+  // Pedir varias mediciones frescas: la primera suele ser una posición aproximada.
+  // Una lectura solo es suficiente cuando su margen de error queda dentro del radio.
+  const deadline=Date.now()+45000;
+  let best=null,lastError=null;
+  for(let attempt=0;attempt<4 && Date.now()<deadline;attempt++){
+    showError(`Buscando ubicación precisa… intento ${attempt+1} de 4`);
+    try{
+      const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,timeout:Math.min(12000,Math.max(1000,deadline-Date.now())),maximumAge:0}));
+      const {latitude,longitude,accuracy}=pos.coords;
+      if(![latitude,longitude,accuracy].every(Number.isFinite))continue;
+      const distance=metersBetween(latitude,longitude,WORKPLACE.latitude,WORKPLACE.longitude);
+      const candidate={distance,accuracy};
+      if(!best || accuracy<best.accuracy)best=candidate;
+      if(distance+accuracy<=WORKPLACE.radiusMeters)return candidate;
+      // Rechazo inequívoco cuando incluso el margen inferior queda fuera del radio.
+      if(distance-accuracy>WORKPLACE.radiusMeters)throw new Error(`Estás fuera del radio de ${WORKPLACE.radiusMeters} m de Bon House (distancia estimada: ${Math.round(distance)} m).`);
+    }catch(e){
+      if(e.message?.startsWith('Estás fuera'))throw e;
+      lastError=e;
+      if(e.code===1)throw new Error('Permite la ubicación precisa para TimeCore en los ajustes del teléfono.');
+    }
   }
-  return {distance,accuracy};
+  if(best)throw new Error(`No se pudo confirmar que estás dentro de ${WORKPLACE.radiusMeters} m de Bon House. Distancia estimada: ${Math.round(best.distance)} m; precisión: ±${Math.round(best.accuracy)} m. Activa ubicación precisa, Wi-Fi y vuelve a intentar cerca de una ventana o al aire libre.`);
+  throw new Error('No se pudo obtener tu ubicación. Activa ubicación precisa y vuelve a intentar. '+(lastError?.message||''));
 }
 async function markAttendance(){
  if(!currentUser||!profile||currentUser.uid===ADMIN_UID)return;
