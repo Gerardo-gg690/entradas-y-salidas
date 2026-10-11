@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 178" role="img" aria-label="Motocicleta tipo Navi">
+<defs><linearGradient id="body" x2="0" y2="1"><stop stop-color="#ffae55"/><stop offset=".46" stop-color="#dd642d"/><stop offset="1" stop-color="#873719"/></linearGradient><linearGradient id="chrome" x2="0" y2="1"><stop stop-color="#f5e0b4"/><stop offset="1" stop-color="#786c60"/></linearGradient><filter id="sh"><feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000" flood-opacity=".55"/></filter></defs>
+<g filter="url(#sh)"><ellipse cx="152" cy="159" rx="130" ry="7" fill="#1c110d" opacity=".5"/>
+<g class="wheel"><circle cx="65" cy="131" r="35" fill="#13181c" stroke="#5b5b59" stroke-width="5"/><circle cx="65" cy="131" r="22" fill="#272d2d" stroke="#c1a17b" stroke-width="3"/><circle cx="65" cy="131" r="7" fill="#dbba8b"/><path d="M65 109v44 M43 131h44 M50 116l30 30 M80 116l-30 30" stroke="#ac9980" stroke-width="3"/></g>
+<g class="wheel"><circle cx="248" cy="131" r="35" fill="#13181c" stroke="#5b5b59" stroke-width="5"/><circle cx="248" cy="131" r="22" fill="#272d2d" stroke="#c1a17b" stroke-width="3"/><circle cx="248" cy="131" r="7" fill="#dbba8b"/><path d="M248 109v44 M226 131h44 M233 116l30 30 M263 116l-30 30" stroke="#ac9980" stroke-width="3"/></g>
+<path d="M64 131L103 90L174 89L244 131" stroke="#b5a394" stroke-width="9" stroke-linecap="round" fill="none"/>
+<path d="M90 84Q116 70 160 75L188 87L176 114L120 120L95 104Z" fill="url(#body)" stroke="#ffc68b" stroke-width="2"/>
+<path d="M119 94Q147 83 180 95L173 115L124 115Z" fill="#29262a" stroke="#b98c5b" stroke-width="2"/>
+<path d="M175 90L212 70L246 83L240 111L206 113L186 107Z" fill="url(#body)" stroke="#f5a965" stroke-width="3"/>
+<path d="M212 71L219 47L242 47L253 58L243 85" fill="#f1a04c" stroke="#e9c18a" stroke-width="2"/>
+<path d="M219 48L238 47L235 57L216 59" fill="#fff4ce"/>
+<path d="M207 71L219 44L238 40" stroke="#b9aca0" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M228 39L253 39" stroke="#202124" stroke-width="8" stroke-linecap="round"/>
+<path d="M92 80L99 69L170 68Q182 68 188 79L177 86L99 86Z" fill="#161a1d" stroke="#4e4e4b" stroke-width="2"/>
+<path d="M90 83L68 79L55 96" fill="none" stroke="#b9a38b" stroke-width="6" stroke-linecap="round"/>
+<path d="M55 97L41 100" stroke="#e4a46d" stroke-width="7" stroke-linecap="round"/>
+<rect x="102" y="99" width="58" height="13" rx="6" fill="#1c2425"/><text x="110" y="108" font-size="9" fill="#fff1d8" font-family="sans-serif" font-weight="bold">MITOLIVERY</text>
+<path d="M161 115L200 117L214 130" stroke="#77716b" stroke-width="6" fill="none"/><path d="M190 117L175 130" stroke="#e3b28a" stroke-width="4" fill="none"/>
+<circle cx="246" cy="61" r="5" fill="#ffedbc"/><path d="M80 76L72 58L85 52L93 68" fill="#e4a55c" stroke="#e9bb87" stroke-width="2"/>
+</g></svg>

@@ -1,0 +1,12 @@
+TIMECORE BON HOUSE - DISEÑO CAFETERÍA + MITOLIVERY
+
+Esta versión parte de TimeCore_50m_Cache_Corregido.zip.
+Se modificaron únicamente index.html, style.css, sw.js y manifest.webmanifest, y se agregó mitolivery-navi.svg.
+script.js, firebase-config.js, firebase-bridge.js y firestore.rules se mantienen SIN CAMBIOS.
+
+El dibujo animado es una motito estilizada tipo Navi; es decorativo, no rastrea repartidores.
+
+Para publicar: extrae el ZIP y reemplaza los archivos de tu repositorio. No cambies las reglas de Firebase. Haz respaldo antes.
+Si el diseño anterior persiste, cierra y vuelve a abrir la app o recarga la página.
+
+Nota: Esta versión no agrega cálculos de pago en vivo ni otras funciones nuevas; es exclusivamente un rediseño visual.
