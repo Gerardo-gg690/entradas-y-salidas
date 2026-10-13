@@ -2277,3 +2277,18 @@ input {
 
 }
 
+
+
+/* ================================================================
+   ACCESO POR ROL Y BOLETAS DE PAGO
+   La navegación administrativa nunca aparece en la vista de empleados.
+   ================================================================ */
+.sideNav[hidden], #openAdmin[hidden] { display: none !important; }
+.shell.employee-mode { display: block; }
+.shell.employee-mode .shellContent { width: 100%; margin-left: 0; max-width: none; }
+.payslipsPanel { scroll-margin-top: 24px; }
+.payslipControls { display: grid; grid-template-columns: 1fr 1fr auto; gap: 14px; align-items: end; margin: 18px 0; }
+.payslipControls label { display: grid; gap: 8px; font-size: 13px; color: var(--muted); }
+.payslipControls select { min-height: 44px; width: 100%; background: #101c2b; border: 1px solid #33445d; color: #f4f7fb; border-radius: 10px; padding: 10px; }
+.payslipControls button { min-height: 44px; }
+@media (max-width: 800px) { .payslipControls { grid-template-columns: 1fr; } }

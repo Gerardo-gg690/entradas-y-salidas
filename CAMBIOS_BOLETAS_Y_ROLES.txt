@@ -1,0 +1,14 @@
+TIMECORE BON HOUSE — CAMBIOS v22
+
+1. Nueva sección "Boletas de pago" en el menú lateral de la administradora.
+2. Selector de empleado y quincena.
+3. Boleta quincenal formal imprimible tamaño carta, con tabla diaria, permisos no pagados, resumen y firmas.
+4. El menú lateral de administración se oculta en la sesión de empleados.
+5. La vista del empleado conserva marcaciones, permisos y GPS de 50 m.
+6. No se han modificado firebase-config.js ni firestore.rules.
+7. Se agregaron comentarios en los bloques principales de JavaScript y CSS.
+8. Se actualizó la versión del service worker para evitar caché antigua.
+
+IMPORTANTE: El PDF usa los datos que el panel administrativo tiene cargados desde Firestore.
+Es un cálculo estimado y no un recibo de pago efectivamente realizado.
+Comprueba las reglas de Firestore y el rol administrador antes de poner en producción.
