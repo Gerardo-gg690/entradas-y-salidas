@@ -1,0 +1,14 @@
+TIMECORE BON HOUSE V27 - CIERRE DE QUINCENA
+
+1. PUBLICAR firestore.rules en Firebase Console > Firestore Database > Reglas. Sin esto no funcionará el cierre.
+2. Subir todos los archivos del ZIP a la raíz del repositorio de GitHub Pages.
+3. Abrir en ventana privada para evitar caché.
+4. Como jefa, ir al panel y seleccionar una fecha dentro de la quincena que ya terminó.
+5. Corregir primero salidas pendientes, revisar cifras, luego Cerrar quincena.
+6. En Historial de quincenas usar Marcar como pagada cuando efectivamente se pagó.
+
+SEGURIDAD: Solo UID administrador puede leer/crear cierres. Los empleados no pueden consultar la planilla.
+Los registros de asistencia de períodos cerrados no se pueden editar ni crear. No hay opción de deshacer el cierre.
+Los importes son estimados, NO sustituyen planilla oficial. El sistema no ejecuta transferencias de dinero.
+
+NOTA: el cierre guarda el resumen que ve la jefa; no constituye verificación de pago ni comprobación contable independiente.

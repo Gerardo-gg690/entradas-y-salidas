@@ -2340,3 +2340,8 @@ input {
     display: none !important;
   }
 }
+
+/* Historial de quincenas: tarjetas flexibles para móvil y escritorio. */
+.closure-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 8px;border-bottom:1px solid rgba(140,165,200,.22)}
+.closure-row>div:last-child{display:flex;gap:8px;flex-wrap:wrap}.closure-row small{color:#9db0c9}
+@media(max-width:650px){.closure-row{align-items:flex-start;flex-direction:column}.closure-row>div:last-child{width:100%}}

@@ -14,9 +14,19 @@ service cloud.firestore {
       allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active']);
       allow delete: if false;
     }
+    function closureIdForDate(date) {
+      let ym = date.split('-')[0] + '-' + date.split('-')[1];
+      let month = date.split('-')[1];
+      let year = int(date.split('-')[0]);
+      let lastDay = month in ['04', '06', '09', '11'] ? '30' : (month == '02' ? ((year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? '29' : '28') : '31');
+      return int(date.split('-')[2]) <= 15 ? ym + '-01_' + ym + '-15' : ym + '-16_' + ym + '-' + lastDay;
+    }
+    function periodOpen(date) {
+      return !exists(/databases/$(database)/documents/payrollClosures/$(closureIdForDate(date)));
+    }
     match /attendance/{id} {
       allow read: if admin() || (signed() && id.matches('^' + request.auth.uid + '_[0-9]{4}-[0-9]{2}-[0-9]{2}$'));
-      allow create: if activeEmployee(request.auth.uid)
+      allow create: if periodOpen(request.resource.data.date) && activeEmployee(request.auth.uid)
         && id == request.auth.uid + '_' + request.resource.data.date
         && request.resource.data.employeeId == request.auth.uid
         && request.resource.data.keys().hasOnly(['employeeId','date','clock_in','clock_out','createdAt'])
@@ -24,7 +34,7 @@ service cloud.firestore {
         && request.resource.data.clock_in is string
         && request.resource.data.date is string
         && request.resource.data.createdAt == request.time;
-      allow update: if (admin() && resource.data.clock_out == null
+      allow update: if periodOpen(resource.data.date) && ((admin() && resource.data.clock_out == null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out','exitSource','exitEditedBy','exitEditedAt','exitReason'])
         && request.resource.data.diff(resource.data).affectedKeys().hasAll(['clock_out','exitSource','exitEditedBy','exitEditedAt','exitReason'])
         && request.resource.data.exitSource == 'admin'
@@ -39,7 +49,27 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out','permissionBreaks'])
         && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out']) || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['permissionBreaks']))
         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['permissionBreaks']) || (request.resource.data.permissionBreaks is list && request.resource.data.permissionBreaks.size() <= 30))
-        && (request.resource.data.clock_out is string || (request.resource.data.clock_out == null && request.resource.data.permissionBreaks is list)));
+        && (request.resource.data.clock_out is string || (request.resource.data.clock_out == null && request.resource.data.permissionBreaks is list))));
+      allow delete: if false;
+    }
+    // Historial inmutable: solo la jefa crea el cierre y puede cambiar el estado a pagado.
+    match /payrollClosures/{id} {
+      allow read: if admin();
+      allow create: if admin()
+        && id == request.resource.data.start + '_' + request.resource.data.end
+        && request.resource.data.keys().hasOnly(['start','end','people','total','paid','closedBy','closedAt','config'])
+        && request.resource.data.closedBy == request.auth.uid
+        && request.resource.data.closedAt == request.time
+        && request.resource.data.paid == false
+        && request.resource.data.people is list
+        && request.resource.data.total is number;
+      allow update: if admin()
+        && resource.data.paid == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paid','paidAt','paidBy'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['paid','paidAt','paidBy'])
+        && request.resource.data.paid == true
+        && request.resource.data.paidBy == request.auth.uid
+        && request.resource.data.paidAt == request.time;
       allow delete: if false;
     }
     match /settings/{id} {

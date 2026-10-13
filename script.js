@@ -5,7 +5,7 @@ const ADMIN_UID = 'tFUODWGOkXeCm18fSO1bKZCm3ms2';
 const WORKPLACE = Object.freeze({ latitude: 13.9871804, longitude: -89.5491599, radiusMeters: 50 });
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const defaults = { salary: 408, halfSalary: 204, paidDays: 30, normalHours: 8, extraRate: 3 };
-let state = { employees: [], attendance: [], config: { ...defaults } }, selectedDate = todayKey(), currentUser = null, profile = null, unsubs = [];
+let state = { employees: [], attendance: [], closures: [], config: { ...defaults } }, selectedDate = todayKey(), currentUser = null, profile = null, unsubs = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = t => t ? new Date(t).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '—';
 const prettyDate = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); };
@@ -45,6 +45,85 @@ function calc(r) {
     return { h, extra, base, extraPay, total: base + extraPay };
 }
 function isOnPermission(r) { const b = r?.permissionBreaks || []; return b.length > 0 && !b[b.length - 1].end; }
+// El cierre de quincena usa una clave única YYYY-MM-DD_YYYY-MM-DD.
+function closureId(start, end) { return `${start}_${end}`; }
+function closureFor(start, end) { return state.closures.find(item => item.id === closureId(start, end)); }
+function periodTotals(start, end) {
+    const people = state.employees.map(employee => {
+        const rows = state.attendance.filter(r => r.employeeId === employee.id && r.date >= start && r.date <= end);
+        const base = rows.reduce((sum, r) => sum + calc(r).base, 0);
+        const extra = rows.reduce((sum, r) => sum + calc(r).extraPay, 0);
+        return { employeeId: employee.id, name: employee.name, dept: employee.dept || '', base: Number(base.toFixed(2)), overtime: Number(extra.toFixed(2)), total: Number((base + extra).toFixed(2)), days: rows.length };
+    });
+    return { people, total: Number(people.reduce((sum, e) => sum + e.total, 0).toFixed(2)) };
+}
+function renderClosures() {
+    const host = $('#closureHistory');
+    if (!host || currentUser?.uid !== ADMIN_UID) return;
+    const [start, end] = fortnightRange(selectedDate);
+    const closed = closureFor(start, end);
+    const button = $('#closeFortnight');
+    button.textContent = closed ? 'Quincena cerrada' : 'Cerrar quincena';
+    button.disabled = !!closed;
+    $('#closureCurrent').textContent = `Período seleccionado: ${start} al ${end} · ${closed ? 'CERRADO' : 'ABIERTO'}`;
+    host.innerHTML = '';
+    const list = [...state.closures].sort((a,b) => b.start.localeCompare(a.start));
+    if (!list.length) { host.textContent = 'Todavía no hay quincenas cerradas.'; return; }
+    for (const item of list) {
+        const row = document.createElement('div');
+        row.className = 'closure-row';
+        const info = document.createElement('div');
+        const status = item.paid ? 'PAGADA' : 'CERRADA · PENDIENTE DE PAGO';
+        info.innerHTML = `<strong>${esc(item.start)} al ${esc(item.end)}</strong><br><small>${esc(status)} · Total: $${Number(item.total || 0).toFixed(2)} · ${Array.isArray(item.people) ? item.people.length : 0} empleados</small>`;
+        const actions = document.createElement('div');
+        const print = document.createElement('button');
+        print.type = 'button'; print.textContent = 'Ver resumen';
+        print.onclick = () => showClosureReceipt(item);
+        actions.append(print);
+        if (!item.paid) {
+            const paid = document.createElement('button');
+            paid.type = 'button'; paid.textContent = 'Marcar como pagada';
+            paid.onclick = () => markClosurePaid(item);
+            actions.append(paid);
+        }
+        row.append(info, actions); host.append(row);
+    }
+}
+function showClosureReceipt(item) {
+    const lines = (item.people || []).map(e => `${e.name}: $${Number(e.total).toFixed(2)}`).join('\n');
+    alert(`BON HOUSE · CIERRE DE QUINCENA\n${item.start} al ${item.end}\nEstado: ${item.paid ? 'Pagada' : 'Pendiente de pago'}\n\n${lines}\n\nTOTAL: $${Number(item.total || 0).toFixed(2)}`);
+}
+async function closeFortnight() {
+    if (currentUser?.uid !== ADMIN_UID) return;
+    const [start, end] = fortnightRange(selectedDate);
+    if (closureFor(start, end)) return alert('Esta quincena ya está cerrada.');
+    if (end > todayKey()) return alert('Espera a que finalice la quincena antes de cerrarla.');
+    const pending = state.attendance.filter(r => r.date >= start && r.date <= end && r.clock_in && !r.clock_out);
+    if (pending.length) return alert(`Hay ${pending.length} jornada(s) con salida pendiente. Corrígelas antes del cierre.`);
+    const { people, total } = periodTotals(start, end);
+    if (!confirm(`¿Cerrar DEFINITIVAMENTE la quincena ${start} al ${end}?\n\nEmpleados: ${people.length}\nTotal estimado: $${total.toFixed(2)}\n\nSe guardará un resumen histórico y se bloquearán las marcaciones de ese período. Esto NO significa que ya se pagó.`)) return;
+    try {
+        const ref = TC.doc(TC.db, 'payrollClosures', closureId(start, end));
+        await TC.runTransaction(TC.db, async tx => {
+            const existing = await tx.get(ref);
+            if (existing.exists()) throw new Error('La quincena ya fue cerrada desde otra sesión.');
+            tx.set(ref, { start, end, people, total, paid: false, closedBy: currentUser.uid, closedAt: TC.serverTimestamp(), config: { ...state.config } });
+        });
+        alert('Quincena cerrada y guardada en Firebase. Ahora puedes marcarla como pagada cuando corresponda.');
+    } catch(e) { alert('No se pudo cerrar: ' + errorText(e)); }
+}
+async function markClosurePaid(item) {
+    if (currentUser?.uid !== ADMIN_UID || item.paid) return;
+    if (!confirm(`¿Confirmas que la quincena ${item.start} al ${item.end} YA FUE PAGADA? Esta acción quedará registrada.`)) return;
+    try {
+        await TC.runTransaction(TC.db, async tx => {
+            const ref = TC.doc(TC.db, 'payrollClosures', item.id);
+            const snap = await tx.get(ref);
+            if (!snap.exists() || snap.data().paid) throw new Error('La quincena ya fue pagada o no existe.');
+            tx.update(ref, { paid: true, paidAt: TC.serverTimestamp(), paidBy: currentUser.uid });
+        });
+    } catch(e) { alert('No se pudo marcar como pagada: ' + errorText(e)); }
+}
 function fortnightRange(date) { const [y, m, d] = date.split('-').map(Number); const a = d <= 15 ? 1 : 16, b = d <= 15 ? 15 : new Date(y, m, 0).getDate(); return [`${y}-${String(m).padStart(2, '0')}-${String(a).padStart(2, '0')}`, `${y}-${String(m).padStart(2, '0')}-${String(b).padStart(2, '0')}`]; }
 /* VISTA DE EMPLEADO: solo muestra su propia jornada. */
 function renderEmployees() {
@@ -257,7 +336,7 @@ function renderAdmin() { if (currentUser?.uid !== ADMIN_UID)
 }
 catch (err) {
     alert(errorText(err));
-} }; list.append(div); }); const [a, b] = fortnightRange(selectedDate); $('#fortnight').textContent = '$' + state.attendance.filter(r => r.date >= a && r.date <= b).reduce((s, r) => s + calc(r).total, 0).toFixed(2); }
+} }; list.append(div); }); const [a, b] = fortnightRange(selectedDate); $('#fortnight').textContent = '$' + state.attendance.filter(r => r.date >= a && r.date <= b).reduce((s, r) => s + calc(r).total, 0).toFixed(2); renderClosures(); }
 /* ================================================================
  * BOLETAS DE PAGO QUINCENAL
  * - Datos de Firestore ya cargados en state.
@@ -433,13 +512,14 @@ $('#generatePayslip').onclick = () => {
     exportFortnight(employee, payslipRange(), "payslip");
 };
 /* AUTENTICACIÓN Y CONTROL DE ACCESO POR ROL. */
-async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
+async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
     showError('Inicia sesión para sincronizar');
     renderEmployees();
     return;
 } showError('Conectado a Firebase'); if (user.uid === ADMIN_UID) {
     unsubs.push(TC.onSnapshot(TC.collection(TC.db, 'employees'), snap => { state.employees = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.active !== false); renderAdmin(); renderEmployees(); }, e => showError(errorText(e))));
     unsubs.push(TC.onSnapshot(TC.collection(TC.db, 'attendance'), snap => { state.attendance = snap.docs.map(d => d.data()); renderAdmin(); renderEmployees(); }, e => showError(errorText(e))));
+    unsubs.push(TC.onSnapshot(TC.collection(TC.db, 'payrollClosures'), snap => { state.closures = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderClosures(); }, e => showError(errorText(e))));
     unsubs.push(TC.onSnapshot(TC.doc(TC.db, 'settings', 'payroll'), snap => { state.config = { ...defaults, ...(snap.data() || {}) }; renderAdmin(); }, e => showError(errorText(e))));
     openAdmin();
 }
@@ -472,7 +552,7 @@ catch (e) {
     alert(errorText(e));
 } };
 $('#exportPdf').onclick = () => window.print();
-$('#closeFortnight').onclick = () => alert('El cierre definitivo de quincena no está disponible.');
+$('#closeFortnight').onclick = closeFortnight;
 $('#back').onclick = () => { $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); renderEmployees(); };
 $('#openAdmin').onclick = openAdmin;
 $('#logout').onclick = () => TC.signOut(TC.auth);
