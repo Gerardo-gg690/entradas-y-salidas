@@ -40,3 +40,22 @@ th{color:#c5a58b}th,td{border-bottom-color:#9a74502e}td{color:#f6e7d7}.dailyTota
 @media(max-width:800px){.hero{padding:24px 20px}.hero h1{font-size:clamp(35px,8vw,58px)}.mitolivery-float{width:133px;height:82px;right:5px;bottom:6px;opacity:.86}.mitolivery-float img{width:130px}.mitolivery-caption{top:-12px;padding:4px 6px}.mitolivery-caption b{font-size:9px}.mitolivery-caption small{font-size:7px}.hero:after{right:5px;top:60px}}
 @media(max-width:480px){header{height:72px;padding:0 16px}header b{font-size:16px}header small{font-size:8px}#clock{font-size:12px}.hero{margin:0 0 25px;padding:25px 17px}.hero h1{font-size:39px;letter-spacing:-1.5px}.hero:after{opacity:.07}.employee{padding:17px}.metrics article{padding:15px}.mitolivery-float{bottom:2px;opacity:.73}main{padding-bottom:115px}}
 @media(prefers-reduced-motion:reduce){.mitolivery-float,.mitolivery-float img,.moving-dots,.coffee-steam{animation:none!important}}
+
+/* TIMECORE | BON HOUSE — ESPRESSO PREMIUM v14 (SOLO PRESENTACION) */
+:root{--bg:#0c0b0a;--panel:#191613;--line:#45382e;--text:#f2eae0;--muted:#b2a69b;--blue:#9b7456;--cyan:#d2ae8b;--green:#8eaf9b;--red:#c88e88}
+html{color-scheme:dark}body{background:radial-gradient(ellipse at 90% 5%,#38271d66,transparent 42%),radial-gradient(ellipse at 0 90%,#2a211b55,transparent 45%),#0c0b0a;color:var(--text)}
+body:before{background-size:62px 62px;background-image:linear-gradient(#b8a18b06 1px,transparent 1px),linear-gradient(90deg,#b8a18b06 1px,transparent 1px)}
+.bg i{border-color:#b99a7720;box-shadow:none;opacity:.42}
+header{background:#14110fe8;border-bottom:1px solid #78614b44;box-shadow:0 8px 32px #0005}header b span,.brand-mark span:not(.brand-cup){color:#d1aa83}header small{color:#b6a08b}#clock{color:#e8d7c6}
+main{max-width:1300px}.hero{background:linear-gradient(112deg,#241c17ee,#15120fe9 74%,#302219b8);border:1px solid #7c5c464d;box-shadow:0 18px 55px #0006,inset 0 1px #f7dbb116}.hero em{color:#d6b18c;text-shadow:none}.hero:after{opacity:.075}.eyebrow{color:#c7a382}
+.panel,.metrics article,.employee{background:linear-gradient(155deg,#201a16f2,#141210f2);border:1px solid #79614c55;box-shadow:0 14px 35px #0004,inset 0 1px #e9d6c00b;border-radius:19px}
+.metrics article:before{color:#ac91734a}.metrics article strong,.metrics article:nth-child(3) strong,.metrics article:nth-child(4) strong{color:#f1ddc7}
+.avatar{background:linear-gradient(145deg,#6d513e,#392d25);border:1px solid #c2a1814d;color:#f1d9bd;box-shadow:none}.employee:hover{border-color:#b08c6a8a;box-shadow:0 16px 40px #0007;transform:translateY(-3px)}
+.search input,.panel input,.modalCard input{background:#110f0e;border:1px solid #66513e88;color:#f3e9de}.search input:focus,input:focus{border-color:#bda184;box-shadow:0 0 0 3px #c7a5861b}
+.employee button,.adminTop button,.actions button{background:#29221c;border:1px solid #71594477;color:#eaddcd}.employee button:hover,.adminTop button:hover,.actions button:hover{background:#362b23}
+.primary{background:linear-gradient(125deg,#8b664b,#d2ab82)!important;border:1px solid #d7b18c9c!important;color:#1a120e!important;box-shadow:0 8px 22px #0003!important}.primary:hover{filter:brightness(1.07)}
+.pinNotice{background:#9c78541a;border-color:#a887674b}.pinNotice span{color:#c8b9a9}.dateNav span,.dailyTotal strong{color:#d6b18c}.muted,.formula,.adminEmp small{color:#a99b8d}th{color:#bea991}td{color:#eee2d6}th,td{border-bottom-color:#9b82672c}
+.modal{background:#0b0908e8}.modalCard{background:linear-gradient(145deg,#2a211b,#15110f);border:1px solid #97765b70;box-shadow:0 35px 90px #000b}.orb{background:linear-gradient(145deg,#6b4d38,#bb9470);box-shadow:0 12px 25px #0005}.login-brand{color:#e9d4bd}.login-brand small{color:#bfa184}#loginScreen{border-color:#92725763!important;box-shadow:0 35px 95px #000a!important}
+.status.working,.ok{color:#a7c5ae}.error{color:#dcaaa3}.admin-link{color:#c6a689}
+.mitolivery-float{opacity:.84;filter:drop-shadow(0 6px 10px #0008)}.mitolivery-caption{background:linear-gradient(110deg,#34261d,#211913);border-color:#b697796e;box-shadow:0 5px 15px #0008}.mitolivery-caption b{color:#e5c7a6}.mitolivery-caption small{color:#cdb69e}
+@media(max-width:600px){main{padding:25px 15px 110px}.hero{padding:22px 18px}.hero h1{font-size:clamp(34px,9vw,49px)}.panel,.metrics article,.employee{border-radius:17px}.mitolivery-float{opacity:.68}}

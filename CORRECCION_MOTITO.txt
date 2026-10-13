@@ -1,0 +1,1 @@
+CORRECCIÓN MITOLIVERY: Moto fija y pequeña en esquina inferior derecha. No se modificaron script.js, firebase-bridge.js, firebase-config.js ni firestore.rules. Actualiza TODOS los archivos en GitHub Pages. En Edge/Chrome usa Ctrl+Shift+R para forzar la actualización. Si sigue mostrando la versión anterior, elimina los datos del sitio o desinstala y reinstala la PWA.

@@ -1,4 +1,4 @@
-const CACHE = 'timecore-bonhouse-cafe-v12';
+const CACHE = 'timecore-bonhouse-espresso-v14';
 const ASSETS = ['./', './index.html', './style.css', './script.js', './firebase-config.js', './firebase-bridge.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './mitolivery-navi.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -1,0 +1,13 @@
+TIMECORE BON HOUSE — ESPRESSO PREMIUM
+
+CAMBIOS: solo diseño (style.css), versionado de recursos (index.html) y nueva caché (sw.js).
+Se mantienen sin modificar: script.js, firebase-bridge.js, firebase-config.js, firestore.rules y lógica de marcaciones.
+
+SUBIDA A GITHUB:
+1. Haz respaldo del repositorio actual.
+2. Descomprime el ZIP y sube los archivos a la raíz del repositorio entradas-y-salidas, reemplazando los existentes.
+3. Espera la publicación de GitHub Pages.
+4. Abre en ventana InPrivate para verificar el diseño; en sesión normal actualiza con Ctrl+Shift+R.
+5. Prueba en móvil y PC las funciones existentes antes de usarlo en producción.
+
+NOTA: Las imágenes anteriores son conceptos visuales. Este ZIP cambia la paleta y acabados del sistema actual, no agrega pantallas, gráficos o mapas nuevos.
