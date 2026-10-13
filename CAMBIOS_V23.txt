@@ -1,0 +1,10 @@
+TIMECORE V23 — CORRECCIÓN DE BOLETAS Y MENÚ MÓVIL
+
+1. Al imprimir una boleta, la ventana de impresión intenta cerrarse después de imprimir o cancelar y devuelve el foco a TimeCore.
+2. El panel principal no se reemplaza ni se recarga para generar boletas.
+3. En teléfonos, el menú administrativo tiene una X para cerrarlo y un botón Menú para reabrirlo.
+4. No se modificaron las reglas de Firestore, la configuración de Firebase ni el cálculo de pagos.
+5. Se incrementó la versión de caché del service worker para cargar los nuevos archivos.
+
+INSTALACIÓN: reemplaza los archivos del repositorio GitHub Pages y prueba en ventana InPrivate.
+NOTA: verificar la impresión en Edge, Chrome y teléfono; la opción de cierre automático de pestañas depende del navegador.

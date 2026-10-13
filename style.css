@@ -2292,3 +2292,51 @@ input {
 .payslipControls select { min-height: 44px; width: 100%; background: #101c2b; border: 1px solid #33445d; color: #f4f7fb; border-radius: 10px; padding: 10px; }
 .payslipControls button { min-height: 44px; }
 @media (max-width: 800px) { .payslipControls { grid-template-columns: 1fr; } }
+
+
+/* ================================================================
+   NAVEGACIÓN MÓVIL: cerrar el menú con X y reabrirlo con Menú.
+   En escritorio no se altera el diseño del panel administrativo.
+   ================================================================ */
+.mobileNavClose,
+.mobileNavOpen { display: none; }
+
+@media (max-width: 750px) {
+  .shell:not(.employee-mode) .mobileNavOpen {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 13px 0;
+    padding: 10px 15px;
+    border: 1px solid #38577a;
+    border-radius: 10px;
+    background: #12263e;
+    color: #f1f6ff;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .shell:not(.employee-mode) .sideNav:not([hidden]) .mobileNavClose {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: #203954;
+    color: white;
+    border: 1px solid #46617c;
+    border-radius: 9px;
+    cursor: pointer;
+    z-index: 3;
+  }
+
+  .shell:not(.employee-mode) .sideNav:not([hidden]) {
+    padding-right: 44px;
+  }
+
+  .shell:not(.employee-mode).mobile-nav-closed .sideNav {
+    display: none !important;
+  }
+}

@@ -60,3 +60,37 @@
     document.addEventListener('visibilitychange', update);
     setTimeout(update, 900);
 })();
+
+
+/* ================================================================
+   MENÚ ADMINISTRATIVO EN TELÉFONOS
+   No afecta a la pantalla de los empleados ni a Firebase.
+   ================================================================ */
+(function initMobileAdminNavigation() {
+    const shell = document.getElementById('appShell');
+    const openButton = document.getElementById('mobileNavOpen');
+    const closeButton = document.getElementById('mobileNavClose');
+    const sidebar = document.getElementById('adminSidebar');
+
+    if (!shell || !openButton || !closeButton || !sidebar) return;
+
+    function closeMenu() {
+        shell.classList.add('mobile-nav-closed');
+        openButton.setAttribute('aria-expanded', 'false');
+    }
+
+    function openMenu() {
+        shell.classList.remove('mobile-nav-closed');
+        openButton.setAttribute('aria-expanded', 'true');
+    }
+
+    closeButton.addEventListener('click', closeMenu);
+    openButton.addEventListener('click', openMenu);
+
+    // Al elegir una sección, ocultar la barra para dejar espacio al contenido.
+    sidebar.querySelectorAll('.navBtn').forEach(button => {
+        button.addEventListener('click', () => {
+            if (window.matchMedia('(max-width: 750px)').matches) closeMenu();
+        });
+    });
+})();

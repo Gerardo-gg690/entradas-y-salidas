@@ -313,6 +313,7 @@ function exportFortnight(employee, chosenRange = null) {
       <td class="num">$${payment.total.toFixed(2)}</td>
     </tr>`;
     }).join('');
+    // Abrimos una ventana aislada para imprimir sin modificar la pantalla principal.
     const printWindow = window.open('', '_blank');
     if (!printWindow)
         return alert('Permite las ventanas emergentes para imprimir la boleta.');
@@ -383,10 +384,24 @@ function exportFortnight(employee, chosenRange = null) {
 <p class="notice">Los períodos con permiso se excluyen de las horas remuneradas. Este comprobante es una estimación del sistema; debe verificarse con la planilla oficial antes del pago. No acredita por sí solo un pago realizado.</p>
 <section class="signatures"><div>Firma del empleado</div><div>Firma del responsable</div></section>
 <footer>Bon House · TimeCore · Documento generado a partir de los registros disponibles.</footer>
-<script>window.addEventListener('load', () => window.print());<\/script>
+<script>
+  // Tras imprimir o cancelar, cerrar esta ventana y devolver el foco a TimeCore.
+  window.addEventListener('afterprint', () => {
+    if (window.opener && !window.opener.closed) window.opener.focus();
+    window.close();
+  });
+  window.addEventListener('load', () => {
+    window.focus();
+    setTimeout(() => window.print(), 300);
+  });
+<\/script>
 </body>
 </html>`);
     printWindow.document.close();
+    // La boleta se genera en otra ventana: el panel de TimeCore no se reemplaza.
+    window.addEventListener('focus', () => {
+        document.querySelector('#generatePayslip')?.blur();
+    }, { once: true });
 }
 /* Acciones del módulo independiente de boletas. */
 $('#generatePayslip').onclick = () => {
