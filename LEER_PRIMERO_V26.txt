@@ -1,0 +1,8 @@
+TIMECORE V26 - CORRECCION DE IMPRESION
+
+La boleta se abre en una ventana independiente y NO inicia impresion automaticamente.
+Usa el boton Imprimir / Guardar como PDF.
+Para volver, cierra la ventana con el boton Cerrar boleta.
+La ventana principal no se reemplaza, no recibe bloqueos ni listeners de foco.
+Sube todos los archivos a GitHub, espera la publicacion y prueba en InPrivate.
+Firebase no requiere cambios.

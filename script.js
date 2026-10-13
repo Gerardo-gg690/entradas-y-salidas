@@ -358,7 +358,10 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
   .signatures { display: flex; justify-content: space-between; gap: 50px; margin-top: 72px; text-align: center; }
   .signatures div { width: 42%; border-top: 1px solid #334155; padding-top: 7px; }
   footer { border-top: 1px solid #dbe3ef; margin-top: 30px; padding-top: 10px; color: #718095; font-size: 9px; }
-  @media print { .top, .info, .summary, .signatures, table { break-inside: avoid; } }
+  .print-actions { display: flex; gap: 12px; justify-content: center; margin: 24px 0; }
+  .print-actions button { padding: 12px 18px; border: 0; border-radius: 8px; background: #193e70; color: #fff; font-weight: 700; cursor: pointer; }
+  .print-actions button + button { background: #e6ebf1; color: #17243a; }
+  @media print { .print-actions { display: none !important; } .top, .info, .summary, .signatures, table { break-inside: avoid; } }
 </style>
 </head>
 <body>
@@ -404,24 +407,21 @@ ${isPayslip ? `
 <p class="notice">${isPayslip ? "Importe estimado según los registros y la configuración actual de TimeCore. No constituye constancia de pago realizado. Revisar con la planilla oficial antes de emitir." : "Reporte de horas calculado según las marcaciones disponibles. Verificar antes de utilizar en planilla."}</p>
 <section class="signatures"><div>Firma del empleado</div><div>Firma del responsable</div></section>
 <footer>Bon House · TimeCore · Documento generado a partir de los registros disponibles.</footer>
+<div class="print-actions" role="toolbar" aria-label="Opciones de boleta">
+  <button type="button" onclick="window.print()">Imprimir / Guardar como PDF</button>
+  <button type="button" onclick="window.close()">Cerrar boleta y volver a TimeCore</button>
+</div>
 <script>
-  // Tras imprimir o cancelar, cerrar esta ventana y devolver el foco a TimeCore.
-  window.addEventListener('afterprint', () => {
-    if (window.opener && !window.opener.closed) window.opener.focus();
-    window.close();
-  });
-  window.addEventListener('load', () => {
-    window.focus();
-    setTimeout(() => window.print(), 300);
-  });
+  // No iniciamos la impresión automáticamente: algunos navegadores dejan
+  // bloqueada la ventana original cuando se vuelve del diálogo de impresión.
+  // El usuario imprime desde el botón de esta ventana independiente.
 <\/script>
 </body>
 </html>`);
     printWindow.document.close();
     // La boleta se genera en otra ventana: el panel de TimeCore no se reemplaza.
-    window.addEventListener('focus', () => {
-        document.querySelector('#generatePayslip')?.blur();
-    }, { once: true });
+    // Sin listeners de foco ni overlays en la ventana principal.
+    // TimeCore permanece interactivo mientras la boleta está abierta.
 }
 /* Acciones del módulo independiente de boletas. */
 $('#generatePayslip').onclick = () => {
