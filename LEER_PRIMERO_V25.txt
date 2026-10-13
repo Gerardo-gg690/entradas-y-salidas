@@ -1,0 +1,18 @@
+TIMECORE BON HOUSE - CORRECCION V25
+
+PROBLEMA ENCONTRADO: el ZIP v24 conservaba versionadores neon23 en index.html y cache v23 en sw.js. Esto podia hacer que el navegador mantuviera la version antigua.
+
+CAMBIOS:
+- Se actualizaron todas las referencias de recursos a v=boleta25.
+- Se cambio la clave de cache del Service Worker a timecore-bonhouse-boleta-v25.
+- La boleta de pago muestra exclusivamente conceptos monetarios, total, datos de empleado y firmas.
+- El reporte de horas conserva las marcaciones y jornadas en documento aparte.
+
+INSTALACION:
+1. Extrae el ZIP.
+2. En GitHub, reemplaza TODOS los archivos del directorio raiz, especialmente index.html, script.js y sw.js.
+3. Comprueba que el commit se publique en Pages.
+4. En Edge: Ctrl+Shift+R o prueba InPrivate. Si usas app instalada, cierra y vuelve a abrir o borra los datos del sitio.
+5. En Boletas de pago, genera un comprobante y confirma que no aparece ninguna tabla de marcaciones.
+
+No se modifica Firebase ni se borran registros. Los importes son estimaciones y deben revisarse.

@@ -363,7 +363,7 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
 </head>
 <body>
 <header class="top">
-  <div><div class="brand">BON HOUSE</div><div class="tagline">CAFETERÍA · CONTROL DE PLANILLA</div></div>
+  <div><div class="brand">BON HOUSE</div><div class="tagline">CAFETERÍA · COMPROBANTE DE PLANILLA</div></div>
   <div class="brandIcon">☕</div>
 </header>
 <h1>${isPayslip ? "BOLETA DE PAGO QUINCENAL" : "REPORTE QUINCENAL DE HORAS LABORALES"}</h1>
@@ -383,7 +383,7 @@ ${isPayslip ? `
   <tbody>
     <tr><td>Remuneración ordinaria calculada</td><td>$${ordinary.toFixed(2)}</td></tr>
     <tr><td>Remuneración por horas extraordinarias</td><td>$${overtime.toFixed(2)}</td></tr>
-    <tr><td>Otros descuentos o ajustes registrados</td><td>No configurados</td></tr>
+    <tr><td>Descuentos y ajustes</td><td>No configurados</td></tr>
   </tbody>
 </table>
 <section class="summary"><div class="total"><span>TOTAL ESTIMADO A PAGAR</span><span>$${total.toFixed(2)}</span></div></section>
@@ -401,7 +401,7 @@ ${isPayslip ? `
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
 </section>
 `}
-<p class="notice">Los períodos con permiso se excluyen de las horas remuneradas. Este comprobante es una estimación del sistema; debe verificarse con la planilla oficial antes del pago. No acredita por sí solo un pago realizado.</p>
+<p class="notice">${isPayslip ? "Importe estimado según los registros y la configuración actual de TimeCore. No constituye constancia de pago realizado. Revisar con la planilla oficial antes de emitir." : "Reporte de horas calculado según las marcaciones disponibles. Verificar antes de utilizar en planilla."}</p>
 <section class="signatures"><div>Firma del empleado</div><div>Firma del responsable</div></section>
 <footer>Bon House · TimeCore · Documento generado a partir de los registros disponibles.</footer>
 <script>
