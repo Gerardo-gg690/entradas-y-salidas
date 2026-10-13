@@ -2345,3 +2345,11 @@ input {
 .closure-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 8px;border-bottom:1px solid rgba(140,165,200,.22)}
 .closure-row>div:last-child{display:flex;gap:8px;flex-wrap:wrap}.closure-row small{color:#9db0c9}
 @media(max-width:650px){.closure-row{align-items:flex-start;flex-direction:column}.closure-row>div:last-child{width:100%}}
+
+/* V28: botón de cierre de sesión exclusivo para empleados. */
+.headerActions { display:flex; align-items:center; justify-content:flex-end; gap:14px; flex-wrap:wrap; }
+.employeeLogout:not([hidden]) { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 14px; border:1px solid rgba(125,174,236,.42); border-radius:12px; background:#12243a; color:#f2f7ff; font:inherit; font-weight:700; cursor:pointer; transition:background .18s, border-color .18s; }
+.employeeLogout:hover { background:#1d3b60; border-color:#78b6ff; }
+.employeeLogout:focus-visible { outline:3px solid #76b5ff; outline-offset:3px; }
+.employeeLogout:disabled { opacity:.5; cursor:wait; }
+@media(max-width:600px) { .headerActions { gap:7px; } .employeeLogout:not([hidden]) { padding:9px 11px; font-size:12px; } }

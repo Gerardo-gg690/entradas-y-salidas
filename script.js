@@ -512,7 +512,7 @@ $('#generatePayslip').onclick = () => {
     exportFortnight(employee, payslipRange(), "payslip");
 };
 /* AUTENTICACIÓN Y CONTROL DE ACCESO POR ROL. */
-async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
+async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#employeeLogout').hidden = !user || user.uid === ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
     showError('Inicia sesión para sincronizar');
     renderEmployees();
     return;
@@ -555,7 +555,7 @@ $('#exportPdf').onclick = () => window.print();
 $('#closeFortnight').onclick = closeFortnight;
 $('#back').onclick = () => { $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); renderEmployees(); };
 $('#openAdmin').onclick = openAdmin;
-$('#logout').onclick = () => TC.signOut(TC.auth);
+$('#logout').onclick = () => TC.signOut(TC.auth); $('#employeeLogout').onclick = async () => { const btn = $('#employeeLogout'); btn.disabled = true; try { await TC.signOut(TC.auth); } catch (err) { alert('No se pudo cerrar sesión: ' + errorText(err)); } finally { btn.disabled = false; } };
 $('#loginForm').onsubmit = async (e) => { e.preventDefault(); $('#loginError').textContent = ''; const user = $('#loginUser').value.trim(), pass = $('#loginPass').value; try {
     await TC.signInWithEmailAndPassword(TC.auth, loginEmail(user), pass);
 }

@@ -1,0 +1,7 @@
+TimeCore V28 - Cerrar sesión para empleados
+
+Se agregó el botón Cerrar sesión al encabezado de la pantalla del empleado.
+El botón ejecuta Firebase Auth signOut y retorna a la pantalla de acceso.
+El botón lateral original de la administradora permanece sin cambios.
+Se actualizó la versión de recursos y service worker para evitar caché anterior.
+No se requieren cambios en Firebase.
