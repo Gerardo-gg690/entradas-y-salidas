@@ -1,0 +1,9 @@
+TIMECORE BON HOUSE — DISEÑO NEON AZUL
+
+Se reconstruyó la presentación con menú lateral, panel de métricas, gráfico y estados dinámicos, más vista móvil adaptable.
+Los archivos script.js, firebase-config.js, firebase-bridge.js y firestore.rules no se modificaron.
+El gráfico muestra acumulados de turnos finalizados del día (no anticipa dinero aún no consolidado).
+Los enlaces de navegación desplazan a las secciones existentes, sin crear funcionalidades ficticias.
+Las alertas GPS y el radio de 50 m conservan el comportamiento de la versión original.
+Sube los archivos al repositorio GitHub Pages, espera despliegue y prueba en ventana privada antes de sustituir la versión productiva.
+No es necesario modificar Firebase para aplicar estos cambios visuales.
