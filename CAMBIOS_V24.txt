@@ -1,0 +1,14 @@
+TIMECORE BON HOUSE - V24
+
+BOLETA DE PAGO: solo conceptos monetarios, total estimado, datos del empleado y firmas.
+No incluye fechas de marcaciones ni horarios de entrada/salida ni tabla de horas.
+
+REPORTE DE HORAS: se conserva el detalle diario de jornadas en documento separado.
+
+Se mantienen Firebase, PIN, GPS, estilos, empleados y otras funciones.
+
+INSTALACION: reemplaza los archivos del repositorio GitHub Pages con el contenido de este ZIP.
+No hay que cambiar Firestore. Usa ventana privada o refresco forzado para evitar cache.
+
+IMPORTANTE: el calculo es estimado. No se han configurado deducciones legales;
+verificar los importes con la planilla oficial antes de emitir comprobantes reales.

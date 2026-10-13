@@ -287,7 +287,7 @@ function payslipRange() {
         : choice === 'second' ? `${year}-${String(month).padStart(2, '0')}-16` : selectedDate;
     return fortnightRange(reference);
 }
-function exportFortnight(employee, chosenRange = null) {
+function exportFortnight(employee, chosenRange = null, documentType = "report") {
     if (currentUser?.uid !== ADMIN_UID)
         return;
     const [start, end] = chosenRange || fortnightRange(selectedDate);
@@ -313,6 +313,9 @@ function exportFortnight(employee, chosenRange = null) {
       <td class="num">$${payment.total.toFixed(2)}</td>
     </tr>`;
     }).join('');
+    // Dos documentos distintos: comprobante económico o reporte de marcaciones.
+    // Nunca mezclamos el detalle de jornadas dentro de la boleta formal.
+    const isPayslip = documentType === 'payslip';
     // Abrimos una ventana aislada para imprimir sin modificar la pantalla principal.
     const printWindow = window.open('', '_blank');
     if (!printWindow)
@@ -324,11 +327,15 @@ function exportFortnight(employee, chosenRange = null) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Boleta de pago - ${esc(employee.name)}</title>
+<title>${isPayslip ? "Boleta de pago" : "Reporte de horas"} - ${esc(employee.name)}</title>
 <style>
   @page { size: letter; margin: 15mm; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 12px/1.5 Arial, sans-serif; color: #17243a; }
+  .sectionHeading { margin-top: 23px; background: #eaf0f6; padding: 9px 12px; font-size: 12px; font-weight: 800; letter-spacing: .6px; }
+  .moneyTable { margin-top: 8px; font-size: 12px; }
+  .moneyTable td { padding: 11px 12px; }
+  .moneyTable td:last-child { text-align: right; font-weight: 700; }
   .top { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #193e70; padding-bottom: 18px; }
   .brand { font-size: 24px; font-weight: 800; letter-spacing: 1px; }
   .tagline { font-size: 10px; letter-spacing: 2px; color: #66768c; }
@@ -359,8 +366,8 @@ function exportFortnight(employee, chosenRange = null) {
   <div><div class="brand">BON HOUSE</div><div class="tagline">CAFETERÍA · CONTROL DE PLANILLA</div></div>
   <div class="brandIcon">☕</div>
 </header>
-<h1>BOLETA DE PAGO QUINCENAL</h1>
-<p class="subtitle">Comprobante individual · Cálculo estimado según registros de asistencia</p>
+<h1>${isPayslip ? "BOLETA DE PAGO QUINCENAL" : "REPORTE QUINCENAL DE HORAS LABORALES"}</h1>
+<p class="subtitle">${isPayslip ? "Comprobante individual de remuneración" : "Detalle de asistencia y jornadas"}</p>
 <section class="info">
   <div><span class="label">EMPLEADO</span><span class="value">${esc(employee.name)}</span></div>
   <div><span class="label">REFERENCIA</span><span class="value">${esc(reference)}</span></div>
@@ -369,7 +376,19 @@ function exportFortnight(employee, chosenRange = null) {
   <div><span class="label">INICIO DEL PERÍODO</span><span class="value">${esc(start)}</span></div>
   <div><span class="label">FIN DEL PERÍODO</span><span class="value">${esc(end)}</span></div>
 </section>
-<h2>Detalle diario de asistencia y remuneración</h2>
+${isPayslip ? `
+<section class="sectionHeading">DETALLE DE REMUNERACIÓN</section>
+<table class="moneyTable">
+  <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
+  <tbody>
+    <tr><td>Remuneración ordinaria calculada</td><td>$${ordinary.toFixed(2)}</td></tr>
+    <tr><td>Remuneración por horas extraordinarias</td><td>$${overtime.toFixed(2)}</td></tr>
+    <tr><td>Otros descuentos o ajustes registrados</td><td>No configurados</td></tr>
+  </tbody>
+</table>
+<section class="summary"><div class="total"><span>TOTAL ESTIMADO A PAGAR</span><span>$${total.toFixed(2)}</span></div></section>
+` : `
+<h2>Detalle de horas laborales y marcaciones</h2>
 <table>
 <thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th class="num">Horas</th><th class="num">Extras</th><th class="num">Permiso no pagado</th><th class="num">Total</th></tr></thead>
 <tbody>${rows || '<tr><td colspan="7">Sin registros en este período.</td></tr>'}</tbody>
@@ -381,6 +400,7 @@ function exportFortnight(employee, chosenRange = null) {
   <div><span>Pago de horas extra</span><strong>$${overtime.toFixed(2)}</strong></div>
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
 </section>
+`}
 <p class="notice">Los períodos con permiso se excluyen de las horas remuneradas. Este comprobante es una estimación del sistema; debe verificarse con la planilla oficial antes del pago. No acredita por sí solo un pago realizado.</p>
 <section class="signatures"><div>Firma del empleado</div><div>Firma del responsable</div></section>
 <footer>Bon House · TimeCore · Documento generado a partir de los registros disponibles.</footer>
@@ -410,7 +430,7 @@ $('#generatePayslip').onclick = () => {
     const employee = state.employees.find(item => item.id === $('#payslipEmployee').value);
     if (!employee)
         return alert('Selecciona un empleado para generar su boleta.');
-    exportFortnight(employee, payslipRange());
+    exportFortnight(employee, payslipRange(), "payslip");
 };
 /* AUTENTICACIÓN Y CONTROL DE ACCESO POR ROL. */
 async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
