@@ -1,0 +1,13 @@
+TIMECORE - ACTUALIZACIÓN VISUAL Y FORMATO
+
+1. Se añadió alerta emergente cuando el GPS indica que estás fuera de 50 m o no confirma el radio.
+2. Muestra distancia estimada si existe, botón Entendido y Reintentar ubicación.
+3. El mapa es ILUSTRATIVO, no una ubicación real ni un servicio de mapas.
+4. Reintentar solo comprueba GPS; no registra entrada ni salida automáticamente.
+5. index.html y style.css se reformatearon con saltos de línea para facilitar edición.
+6. El JavaScript de marcaciones se conserva, salvo la presentación de mensajes de ubicación.
+7. Firebase y firestore.rules NO fueron modificados.
+8. Se actualizó versión de caché del service worker.
+
+SUBIR A GITHUB: reemplaza los archivos del repositorio con los del ZIP. No subas el ZIP comprimido.
+PRUEBAS: valida entradas, salidas y permisos en un entorno de prueba antes de usarlo para nómina.

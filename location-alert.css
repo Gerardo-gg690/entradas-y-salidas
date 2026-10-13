@@ -1,0 +1,82 @@
+/* Ventana de aviso de geolocalización (solo interfaz). */
+.location-alert[hidden] { display: none !important; }
+.location-alert {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 7, 17, .84);
+  backdrop-filter: blur(12px);
+}
+.location-alert__panel {
+  width: min(100%, 460px);
+  padding: clamp(24px, 5vw, 34px);
+  border: 1px solid rgba(117, 149, 203, .32);
+  border-radius: 24px;
+  background: linear-gradient(145deg, #141e30, #080d16 80%);
+  color: #f3f7ff;
+  box-shadow: 0 25px 90px rgba(0, 0, 0, .65), inset 0 1px rgba(255,255,255,.08);
+  text-align: center;
+}
+.location-alert__symbol {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 15px;
+  border: 1px solid rgba(255, 83, 100, .55);
+  border-radius: 50%;
+  background: rgba(255, 83, 100, .13);
+  color: #ff6478;
+  font-size: 38px;
+  font-weight: 800;
+}
+.location-alert__panel h2 { margin: 0 0 10px; font-size: 1.55rem; }
+.location-alert__distance { margin: 10px 0; color: #78b2ff; font-size: 2.25rem; font-weight: 800; }
+.location-alert__panel p { color: #c4d0e3; line-height: 1.5; }
+.location-alert__map {
+  position: relative;
+  height: 130px;
+  margin: 20px 0;
+  overflow: hidden;
+  border: 1px solid #324157;
+  border-radius: 15px;
+  background: repeating-linear-gradient(32deg, transparent 0 22px, #1e2b3d 23px 25px, transparent 26px 54px), repeating-linear-gradient(122deg, #101a28 0 32px, #27374a 33px 35px, #101a28 36px 66px);
+}
+.location-alert__radius {
+  position: absolute;
+  width: 105px;
+  height: 105px;
+  left: 17%;
+  top: 12px;
+  border: 2px solid #56c5b1;
+  border-radius: 50%;
+  background: rgba(86, 197, 177, .15);
+}
+.location-alert__place, .location-alert__user {
+  position: absolute;
+  padding: 6px 9px;
+  border-radius: 9px;
+  background: #0c1727;
+  font-size: 12px;
+  font-weight: 700;
+}
+.location-alert__place { left: 19%; top: 48px; color: #7ce0cc; }
+.location-alert__user { right: 9%; top: 48px; color: #ff7183; }
+.location-alert__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.location-alert__actions button {
+  flex: 1 1 160px;
+  min-height: 46px;
+  padding: 10px;
+  border: 0;
+  border-radius: 11px;
+  background: #236fe6;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.location-alert__actions button:first-child { background: #253449; }
+.location-alert__actions button:disabled { opacity: .6; cursor: wait; }

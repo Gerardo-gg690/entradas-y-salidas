@@ -11,7 +11,19 @@ const prettyDate=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1
 const uname=s=>s.trim().toLowerCase();
 const loginEmail=s=>s.includes('@')?s.trim():`${uname(s)}@timecore.invalid`;
 const errorText=e=>({'auth/invalid-credential':'Usuario o contraseña incorrectos.','auth/email-already-in-use':'Este usuario ya existe.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.','permission-denied':'No tienes permisos. Comprueba las reglas de Firestore.','unavailable':'Sin conexión. Intenta nuevamente.'}[e.code]||e.message||'Ocurrió un error.');
-function showError(message){$('#syncStatus').textContent=message}
+function showError(message) {
+  const status = $('#syncStatus');
+  const text = String(message || '');
+  const isLocationWarning = /fuera del radio|distancia estimada|ubicación precisa|no se pudo confirmar que estás dentro/i.test(text);
+
+  if (isLocationWarning && window.TimeCoreLocationAlert) {
+    status.textContent = '';
+    window.TimeCoreLocationAlert.open(text);
+    return;
+  }
+
+  status.textContent = text;
+}
 function clock(){$('#clock').textContent=new Date().toLocaleString('es-SV',{weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'})}clock();setInterval(clock,1000);
 function clearListeners(){unsubs.forEach(f=>f());unsubs=[]}
 function record(id,date){return state.attendance.find(r=>r.employeeId===id&&r.date===date)}

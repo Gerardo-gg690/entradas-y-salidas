@@ -1,5 +1,5 @@
-const CACHE = 'timecore-bonhouse-neon-v20';
-const ASSETS = ['./', './index.html', './style.css', './script.js', './ui-enhancements.js', './firebase-config.js', './firebase-bridge.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './mitolivery-navi.svg'];
+const CACHE = 'timecore-bonhouse-neon-v21';
+const ASSETS = ['./', './index.html', './style.css', './script.js', './ui-enhancements.js', './firebase-config.js', './firebase-bridge.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './mitolivery-navi.svg', './location-alert.css', './location-alert.js'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
