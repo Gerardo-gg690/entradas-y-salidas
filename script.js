@@ -324,12 +324,39 @@ async function adminCloseShift(e, r) {
         alert('No se pudo registrar la salida: ' + errorText(err));
     }
 }
+async function adminRestoreShift(e, r) {
+    if (currentUser?.uid !== ADMIN_UID || !r?.clock_in || !r?.clock_out) return;
+    const [start, end] = fortnightRange(r.date);
+    if (closureFor(start, end)) return alert('La quincena está cerrada. No se puede modificar esta marcación.');
+    const reason = prompt(`Motivo para restablecer la jornada de ${e.name} del ${r.date}:`, 'Salida marcada por accidente');
+    if (reason === null) return;
+    if (reason.trim().length < 5) return alert('Escribe un motivo de al menos 5 caracteres.');
+    if (!confirm(`¿Restablecer la jornada de ${e.name}?\nEntrada original: ${fmt(r.clock_in)}\nSalida accidental: ${fmt(r.clock_out)}\n\nSe conservará la hora de entrada y el historial de la corrección.`)) return;
+    try {
+        const ref = TC.doc(TC.db, 'attendance', `${e.id}_${r.date}`);
+        await TC.runTransaction(TC.db, async tx => {
+            const snap = await tx.get(ref);
+            if (!snap.exists() || !snap.data().clock_out || snap.data().employeeId !== e.id)
+                throw new Error('La marcación cambió o no existe. Actualiza la página.');
+            const row = snap.data();
+            const history = Array.isArray(row.correctionHistory) ? row.correctionHistory : [];
+            if (history.length >= 30) throw new Error('Se alcanzó el límite de correcciones de esta jornada.');
+            tx.update(ref, {
+                clock_out: null,
+                correctionHistory: [...history, { previousExit: row.clock_out, originalEntry: row.clock_in, reason: reason.trim().slice(0, 250), by: currentUser.uid, at: new Date().toISOString() }],
+                lastCorrectionBy: currentUser.uid,
+                lastCorrectionAt: TC.serverTimestamp()
+            });
+        });
+        showError('✓ Jornada restablecida; entrada original conservada. El empleado ya puede marcar su salida real.');
+    } catch (err) { alert('No se pudo restablecer la jornada: ' + errorText(err)); }
+}
 /* PANEL ADMINISTRATIVO: métricas y registros del personal. */
 function renderAdmin() { if (currentUser?.uid !== ADMIN_UID)
     return; renderPayslipOptions(); const c = state.config; for (const id of Object.keys(defaults))
     $('#' + id).value = c[id]; $('#selectedDateLabel').textContent = prettyDate(selectedDate); $('#todayBadge').textContent = selectedDate === todayKey() ? 'HOY' : ''; $('#nextDay').disabled = selectedDate >= todayKey(); let present = 0, extra = 0, money = 0; const body = $('#payrollBody'); body.innerHTML = ''; state.employees.forEach(e => { const r = record(e.id, selectedDate), p = calc(r), perm = permissionHours(r, r?.clock_out || new Date().toISOString()); if (selectedDate === todayKey() && r?.clock_in && !r.clock_out)
-    present++; extra += p.extra; money += p.total; const tr = document.createElement('tr'); tr.innerHTML = `<td><div class="namePdfCell"><div><b>${esc(e.name)}</b><br><small>${esc(e.dept || '—')}</small></div><button class="miniPdf">PDF quincenal</button></div></td><td>${fmt(r?.clock_in)}</td><td>${fmt(r?.clock_out)}${r?.exitSource === 'admin' ? '<br><small>Salida por jefa</small>' : ''}${isOnPermission(r) ? '<br><small>Fuera con permiso</small>' : ''}${r?.clock_in && !r?.clock_out ? '<br><button class="manualExit">Registrar salida</button>' : ''}</td><td>${p.h.toFixed(2)} h${perm > 0 ? `<br><small>Permiso no pagado: ${perm.toFixed(2)} h</small>` : ''}</td><td>${p.extra.toFixed(2)} h</td><td>$${p.base.toFixed(2)}</td><td>$${p.extraPay.toFixed(2)}</td><td><b>$${p.total.toFixed(2)}</b></td>`; tr.querySelector('.miniPdf').onclick = () => exportFortnight(e); const exitBtn = tr.querySelector('.manualExit'); if (exitBtn)
-    exitBtn.onclick = () => adminCloseShift(e, r); body.append(tr); }); $('#presentCount').textContent = present; $('#extraToday').textContent = extra.toFixed(2) + ' h'; $('#moneyToday').textContent = $('#dailyGrandTotal').textContent = '$' + money.toFixed(2); $('#formulaInfo').textContent = `Valor diario: $${(c.salary / c.paidDays).toFixed(2)} · Hora extra: $${c.extraRate.toFixed(2)}.`; $('#activity').innerHTML = state.employees.map(e => { const r = record(e.id, selectedDate); return r?.clock_in ? `<div>${esc(e.name)} · Entrada ${fmt(r.clock_in)} · Salida ${fmt(r.clock_out)}</div>` : ''; }).join('') || '<p>No hay marcaciones en esta fecha.</p>'; const list = $('#adminEmployees'); list.innerHTML = ''; state.employees.forEach(e => { const div = document.createElement('div'); div.className = 'adminEmp'; div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')}</small></div><button>Desactivar</button>`; div.querySelector('button').onclick = async () => { if (!confirm('¿Desactivar a este empleado? Su historial permanecerá guardado.'))
+    present++; extra += p.extra; money += p.total; const tr = document.createElement('tr'); tr.innerHTML = `<td><div class="namePdfCell"><div><b>${esc(e.name)}</b><br><small>${esc(e.dept || '—')}</small></div><button class="miniPdf">PDF quincenal</button></div></td><td>${fmt(r?.clock_in)}</td><td>${fmt(r?.clock_out)}${r?.exitSource === 'admin' ? '<br><small>Salida por jefa</small>' : ''}${isOnPermission(r) ? '<br><small>Fuera con permiso</small>' : ''}${r?.clock_in && !r?.clock_out ? '<br><button class="manualExit">Registrar salida</button>' : ''}${r?.clock_out ? '<br><button class="restoreShift" type="button">Restablecer entrada</button>' : ''}${r?.correctionHistory?.length ? '<br><small>Correcciones: ' + r.correctionHistory.length + '</small>' : ''}</td><td>${p.h.toFixed(2)} h${perm > 0 ? `<br><small>Permiso no pagado: ${perm.toFixed(2)} h</small>` : ''}</td><td>${p.extra.toFixed(2)} h</td><td>$${p.base.toFixed(2)}</td><td>$${p.extraPay.toFixed(2)}</td><td><b>$${p.total.toFixed(2)}</b></td>`; tr.querySelector('.miniPdf').onclick = () => exportFortnight(e); const exitBtn = tr.querySelector('.manualExit'); if (exitBtn)
+    exitBtn.onclick = () => adminCloseShift(e, r); const restoreBtn = tr.querySelector('.restoreShift'); if (restoreBtn) restoreBtn.onclick = () => adminRestoreShift(e, r); body.append(tr); }); $('#presentCount').textContent = present; $('#extraToday').textContent = extra.toFixed(2) + ' h'; $('#moneyToday').textContent = $('#dailyGrandTotal').textContent = '$' + money.toFixed(2); $('#formulaInfo').textContent = `Valor diario: $${(c.salary / c.paidDays).toFixed(2)} · Hora extra: $${c.extraRate.toFixed(2)}.`; $('#activity').innerHTML = state.employees.map(e => { const r = record(e.id, selectedDate); return r?.clock_in ? `<div>${esc(e.name)} · Entrada ${fmt(r.clock_in)} · Salida ${fmt(r.clock_out)}</div>` : ''; }).join('') || '<p>No hay marcaciones en esta fecha.</p>'; const list = $('#adminEmployees'); list.innerHTML = ''; state.employees.forEach(e => { const div = document.createElement('div'); div.className = 'adminEmp'; div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')}</small></div><button>Desactivar</button>`; div.querySelector('button').onclick = async () => { if (!confirm('¿Desactivar a este empleado? Su historial permanecerá guardado.'))
     return; try {
     await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { active: false }, { merge: true });
     showError('Empleado desactivado');
@@ -538,6 +565,30 @@ function shift(n) { const d = new Date(selectedDate + 'T12:00:00'); d.setDate(d.
     selectedDate = todayKey(); renderAdmin(); }
 $('#prevDay').onclick = () => shift(-1);
 $('#nextDay').onclick = () => shift(1);
+
+async function addEmployee() {
+  if (currentUser?.uid !== ADMIN_UID) return alert('Solo la administradora puede agregar empleados.');
+  const name=$('#newName').value.trim(), dept=$('#newDept').value.trim(), username=$('#newUsername').value.trim(), password=$('#newPin').value;
+  if (!name || !dept || !username || password.length<6) return alert('Completa todos los campos. La contraseña necesita al menos 6 caracteres.');
+  if (!/^[a-zA-Z0-9._-]+$/.test(username)) return alert('El usuario solo admite letras, números, puntos, guiones y guion bajo.');
+  const button=$('#addEmployee'); button.disabled=true;
+  let secondaryApp=null, secondaryAuth=null, created=null;
+  try {
+    secondaryApp=TC.initializeApp(window.TIMECORE_FIREBASE_CONFIG,'timecore-create-employee');
+    secondaryAuth=TC.getAuth(secondaryApp);
+    created=await TC.createUserWithEmailAndPassword(secondaryAuth,loginEmail(username),password);
+    await TC.setDoc(TC.doc(TC.db,'employees',created.user.uid),{name,dept,username,active:true,createdAt:TC.serverTimestamp()});
+    for(const id of ['newName','newDept','newUsername','newPin']) $('#'+id).value='';
+    showError('✓ Empleado agregado correctamente.');
+  } catch(err) {
+    alert('No se pudo agregar el empleado: '+errorText(err)+(created?'\nSe creó la cuenta de acceso, pero no el perfil. No vuelvas a crearla sin revisar Firebase.':''));
+  } finally {
+    if(secondaryAuth) try {await TC.signOut(secondaryAuth)}catch(_){}
+    if(secondaryApp) try {await TC.deleteApp(secondaryApp)}catch(_){}
+    button.disabled=false;
+  }
+}
+
 $('#addEmployee').onclick = addEmployee;
 $('#applyConfig').onclick = async () => { const next = {}; for (const id of Object.keys(defaults)) {
     const n = Number($('#' + id).value);

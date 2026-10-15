@@ -43,6 +43,19 @@ service cloud.firestore {
         && request.resource.data.exitReason is string
         && request.resource.data.exitReason.size() >= 5
         && request.resource.data.clock_out is string)
+        || (admin()
+        && resource.data.clock_out is string
+        && request.resource.data.clock_out == null
+        && request.resource.data.clock_in == resource.data.clock_in
+        && request.resource.data.employeeId == resource.data.employeeId
+        && request.resource.data.date == resource.data.date
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out','correctionHistory','lastCorrectionBy','lastCorrectionAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['clock_out','correctionHistory','lastCorrectionBy','lastCorrectionAt'])
+        && request.resource.data.lastCorrectionBy == request.auth.uid
+        && request.resource.data.lastCorrectionAt == request.time
+        && request.resource.data.correctionHistory is list
+        && request.resource.data.correctionHistory.size() <= 30
+        && request.resource.data.correctionHistory.size() == (('correctionHistory' in resource.data) ? resource.data.correctionHistory.size() + 1 : 1))
         || (activeEmployee(request.auth.uid)
         && resource.data.employeeId == request.auth.uid
         && resource.data.clock_out == null
