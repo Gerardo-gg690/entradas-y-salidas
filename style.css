@@ -2353,3 +2353,10 @@ input {
 .employeeLogout:focus-visible { outline:3px solid #76b5ff; outline-offset:3px; }
 .employeeLogout:disabled { opacity:.5; cursor:wait; }
 @media(max-width:600px) { .headerActions { gap:7px; } .employeeLogout:not([hidden]) { padding:9px 11px; font-size:12px; } }
+
+/* Acceso visible a cerrar sesión en el encabezado de la jefa */
+.adminLogoutTop { background: linear-gradient(135deg,#a51d35,#e14558); color:#fff; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:11px 15px; font-weight:700; cursor:pointer; box-shadow:0 5px 20px rgba(180,25,55,.22); }
+.adminLogoutTop:hover { filter:brightness(1.12); }
+.adminLogoutTop:disabled { opacity:.6; cursor:wait; }
+.adminTopRight { flex-wrap:wrap; }
+@media(max-width:650px) { .adminLogoutTop { padding:10px 12px; font-size:13px; } }

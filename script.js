@@ -555,7 +555,16 @@ $('#exportPdf').onclick = () => window.print();
 $('#closeFortnight').onclick = closeFortnight;
 $('#back').onclick = () => { $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); renderEmployees(); };
 $('#openAdmin').onclick = openAdmin;
-$('#logout').onclick = () => TC.signOut(TC.auth); $('#employeeLogout').onclick = async () => { const btn = $('#employeeLogout'); btn.disabled = true; try { await TC.signOut(TC.auth); } catch (err) { alert('No se pudo cerrar sesión: ' + errorText(err)); } finally { btn.disabled = false; } };
+const adminSignOut = async () => {
+    if (!confirm('¿Deseas cerrar la sesión de administración?')) return;
+    const buttons = [$('#logout'), $('#adminLogout')];
+    buttons.forEach(b => { if (b) b.disabled = true; });
+    try { await TC.signOut(TC.auth); }
+    catch (err) { alert('No se pudo cerrar sesión: ' + errorText(err)); }
+    finally { buttons.forEach(b => { if (b) b.disabled = false; }); }
+};
+$('#logout').onclick = adminSignOut;
+$('#adminLogout').onclick = adminSignOut; $('#employeeLogout').onclick = async () => { const btn = $('#employeeLogout'); btn.disabled = true; try { await TC.signOut(TC.auth); } catch (err) { alert('No se pudo cerrar sesión: ' + errorText(err)); } finally { btn.disabled = false; } };
 $('#loginForm').onsubmit = async (e) => { e.preventDefault(); $('#loginError').textContent = ''; const user = $('#loginUser').value.trim(), pass = $('#loginPass').value; try {
     await TC.signInWithEmailAndPassword(TC.auth, loginEmail(user), pass);
 }
