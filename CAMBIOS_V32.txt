@@ -1,0 +1,1 @@
+TimeCore v32: corregida condición de carrera de Firebase (TC undefined). Inicialización segura aun cuando el evento tc-ready se dispare antes de script.js. Mensaje de carga si Firebase falla. Versionado de archivos y caché actualizado. No se cambiaron reglas ni datos de Firebase.

@@ -617,9 +617,22 @@ const adminSignOut = async () => {
 $('#logout').onclick = adminSignOut;
 $('#adminLogout').onclick = adminSignOut; $('#employeeLogout').onclick = async () => { const btn = $('#employeeLogout'); btn.disabled = true; try { await TC.signOut(TC.auth); } catch (err) { alert('No se pudo cerrar sesión: ' + errorText(err)); } finally { btn.disabled = false; } };
 $('#loginForm').onsubmit = async (e) => { e.preventDefault(); $('#loginError').textContent = ''; const user = $('#loginUser').value.trim(), pass = $('#loginPass').value; try {
+    if (!window.TC) throw new Error('Firebase todavía no está listo. Espera unos segundos y vuelve a intentar.');
     await TC.signInWithEmailAndPassword(TC.auth, loginEmail(user), pass);
 }
 catch (err) {
     $('#loginError').textContent = errorText(err);
 } };
-window.addEventListener('tc-ready', () => TC.onAuthStateChanged(TC.auth, u => loadSession(u).catch(e => showError(errorText(e)))));
+// Iniciar una sola vez, incluso si Firebase terminó de cargar antes que este archivo.
+let authListenerStarted = false;
+function startTimeCoreAuth() {
+    if (authListenerStarted || !window.TC) return;
+    authListenerStarted = true;
+    TC.onAuthStateChanged(TC.auth, u => loadSession(u).catch(e => showError(errorText(e))));
+}
+window.addEventListener('tc-ready', startTimeCoreAuth);
+window.addEventListener('tc-load-error', () => {
+    const el = $('#loginError');
+    if (el) el.textContent = 'No se pudo cargar Firebase. Comprueba tu conexión y recarga la página.';
+});
+startTimeCoreAuth();
