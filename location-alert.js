@@ -40,7 +40,9 @@
             showError('Ubicación verificada: a ' + Math.round(result.distance) + ' m de Bon House. Ya puedes intentar marcar.');
         }
         catch (error) {
-            open(typeof errorText === 'function' ? errorText(error) : String(error.message || error));
+            const text = typeof errorText === 'function' ? errorText(error) : String(error.message || error);
+            if (text.startsWith('Estás fuera del radio de ')) open(text);
+            else { close(); showError(text); }
         }
         finally {
             retryButton.disabled = false;

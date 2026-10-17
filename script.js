@@ -15,12 +15,13 @@ const errorText = e => ({ 'auth/invalid-credential': 'Usuario o contraseña inco
 function showError(message) {
     const status = $('#syncStatus');
     const text = String(message || '');
-    const isLocationWarning = /fuera del radio|distancia estimada|ubicación precisa|no se pudo confirmar que estás dentro/i.test(text);
+    const isLocationWarning = text.startsWith('Estás fuera del radio de ');
     if (isLocationWarning && window.TimeCoreLocationAlert) {
         status.textContent = '';
         window.TimeCoreLocationAlert.open(text);
         return;
     }
+    if (window.TimeCoreLocationAlert) window.TimeCoreLocationAlert.close();
     status.textContent = text;
 }
 function clock() { $('#clock').textContent = new Date().toLocaleString('es-SV', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
@@ -188,7 +189,7 @@ async function verifyWorkplace() {
     // Pedir varias mediciones frescas: la primera suele ser una posición aproximada.
     // Una lectura solo es suficiente cuando su margen de error queda dentro del radio.
     const deadline = Date.now() + 45000;
-    let best = null, lastError = null;
+    let best = null, lastError = null, outsideReadings = 0;
     for (let attempt = 0; attempt < 4 && Date.now() < deadline; attempt++) {
         showError(`Buscando ubicación precisa… intento ${attempt + 1} de 4`);
         try {
@@ -202,9 +203,13 @@ async function verifyWorkplace() {
                 best = candidate;
             if (distance + accuracy <= WORKPLACE.radiusMeters)
                 return candidate;
-            // Rechazo inequívoco cuando incluso el margen inferior queda fuera del radio.
-            if (distance - accuracy > WORKPLACE.radiusMeters)
-                throw new Error(`Estás fuera del radio de ${WORKPLACE.radiusMeters} m de Bon House (distancia estimada: ${Math.round(distance)} m).`);
+            // No declarar fuera del local por una sola lectura GPS imprecisa.
+            // Dos mediciones inequívocamente fuera permiten mostrar la alerta visual.
+            if (distance - accuracy > WORKPLACE.radiusMeters) {
+                outsideReadings++;
+                if (outsideReadings >= 2)
+                    throw new Error(`Estás fuera del radio de ${WORKPLACE.radiusMeters} m de Bon House (distancia estimada: ${Math.round(distance)} m).`);
+            }
         }
         catch (e) {
             if (e.message?.startsWith('Estás fuera'))
@@ -215,7 +220,7 @@ async function verifyWorkplace() {
         }
     }
     if (best)
-        throw new Error(`No se pudo confirmar que estás dentro de ${WORKPLACE.radiusMeters} m de Bon House. Distancia estimada: ${Math.round(best.distance)} m; precisión: ±${Math.round(best.accuracy)} m. Activa ubicación precisa, Wi-Fi y vuelve a intentar cerca de una ventana o al aire libre.`);
+        throw new Error(`Ubicación no confirmada: el GPS indica ${Math.round(best.distance)} m de distancia con precisión ±${Math.round(best.accuracy)} m. No se registró la marcación. Activa ubicación precisa y vuelve a intentar.`);
     throw new Error('No se pudo obtener tu ubicación. Activa ubicación precisa y vuelve a intentar. ' + (lastError?.message || ''));
 }
 async function markAttendance() {
