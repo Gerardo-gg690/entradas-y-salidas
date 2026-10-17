@@ -5,6 +5,7 @@ const ADMIN_UID = 'tFUODWGOkXeCm18fSO1bKZCm3ms2';
 const WORKPLACE = Object.freeze({ latitude: 13.9871804, longitude: -89.5491599, radiusMeters: 50 });
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const defaults = { salary: 408, halfSalary: 204, paidDays: 30, normalHours: 8, extraRate: 3 };
+let markingInProgress = false;
 let state = { employees: [], attendance: [], closures: [], config: { ...defaults } }, selectedDate = todayKey(), currentUser = null, profile = null, unsubs = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = t => t ? new Date(t).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -159,7 +160,7 @@ function renderEmployees() {
     const normal = document.createElement('button');
     normal.type = 'button';
     normal.textContent = done ? 'Turno completado' : !started ? 'Marcar entrada' : paused ? 'Salida normal no disponible durante el permiso' : 'Marcar salida';
-    normal.disabled = done || paused;
+    normal.disabled = done || paused || markingInProgress;
     normal.onclick = markAttendance;
     actions.append(normal);
     if (started && !done) {
@@ -168,6 +169,7 @@ function renderEmployees() {
         permission.textContent = paused ? 'Entrada con permiso' : 'Salida con permiso';
         permission.style.marginTop = '8px';
         permission.style.background = paused ? '#117d68' : '#a65b24';
+        permission.disabled = markingInProgress;
         permission.onclick = () => markPermission(paused ? 'return' : 'leave');
         actions.append(permission);
     }
@@ -224,11 +226,11 @@ async function verifyWorkplace() {
     throw new Error('No se pudo obtener tu ubicación. Activa ubicación precisa y vuelve a intentar. ' + (lastError?.message || ''));
 }
 async function markAttendance() {
+    if (markingInProgress) return;
     if (!currentUser || !profile || currentUser.uid === ADMIN_UID)
         return;
-    const btn = $('#employeeGrid button');
-    if (btn)
-        btn.disabled = true;
+    markingInProgress = true;
+    renderEmployees();
     try {
         const locationCheck = await verifyWorkplace(), date = todayKey(), ref = TC.doc(TC.db, 'attendance', `${currentUser.uid}_${date}`);
         await TC.runTransaction(TC.db, async (tx) => {
@@ -243,14 +245,19 @@ async function markAttendance() {
             else
                 throw new Error('El turno ya está completo.');
         });
-        showError(`✓ Marcación guardada en Firebase · A ${Math.round(locationCheck.distance)} m de Bon House`);
+        // Consultar el servidor para verificar que el cambio quedó persistido.
+        const confirmed = await TC.getDocFromServer(ref);
+        if (!confirmed.exists() || !confirmed.data().clock_in) throw new Error('No se pudo confirmar la marcación en Firebase. Contacta a la jefa antes de reintentar.');
+        state.attendance = [confirmed.data()];
+        renderEmployees();
+        showError(`✓ Marcación confirmada en Firebase · A ${Math.round(locationCheck.distance)} m de Bon House`);
     }
     catch (e) {
         showError(errorText(e));
     }
     finally {
-        if (btn)
-            btn.disabled = false;
+        markingInProgress = false;
+        renderEmployees();
     }
 }
 async function markPermission(action) {
@@ -544,7 +551,7 @@ $('#generatePayslip').onclick = () => {
     exportFortnight(employee, payslipRange(), "payslip");
 };
 /* AUTENTICACIÓN Y CONTROL DE ACCESO POR ROL. */
-async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#employeeLogout').hidden = !user || user.uid === ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
+async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#refreshTimeCore').hidden = !user; $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#employeeLogout').hidden = !user || user.uid === ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
     showError('Inicia sesión para sincronizar');
     renderEmployees();
     return;
@@ -566,6 +573,46 @@ else {
     unsubs.push(TC.onSnapshot(TC.doc(TC.db, 'attendance', `${user.uid}_${todayKey()}`), snap => { state.attendance = snap.exists() ? [snap.data()] : []; renderEmployees(); }, e => showError(errorText(e))));
     renderEmployees();
 } }
+let refreshingData = false;
+async function refreshTimeCore() {
+    if (!window.TC || !currentUser || refreshingData || markingInProgress) return;
+    const button = $('#refreshTimeCore');
+    refreshingData = true;
+    button.disabled = true;
+    button.textContent = '↻ Actualizando…';
+    try {
+        if (currentUser.uid === ADMIN_UID) {
+            const [employees, attendance, closures, settings] = await Promise.all([
+                TC.getDocsFromServer(TC.collection(TC.db, 'employees')),
+                TC.getDocsFromServer(TC.collection(TC.db, 'attendance')),
+                TC.getDocsFromServer(TC.collection(TC.db, 'payrollClosures')),
+                TC.getDocFromServer(TC.doc(TC.db, 'settings', 'payroll'))
+            ]);
+            state.employees = employees.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.active !== false);
+            state.attendance = attendance.docs.map(d => d.data());
+            state.closures = closures.docs.map(d => ({ id: d.id, ...d.data() }));
+            state.config = { ...defaults, ...(settings.data() || {}) };
+            renderAdmin(); renderEmployees(); renderClosures();
+        } else {
+            const [employee, attendance] = await Promise.all([
+                TC.getDocFromServer(TC.doc(TC.db, 'employees', currentUser.uid)),
+                TC.getDocFromServer(TC.doc(TC.db, 'attendance', `${currentUser.uid}_${todayKey()}`))
+            ]);
+            if (!employee.exists() || employee.data().active === false) throw new Error('La cuenta del empleado no está activa.');
+            profile = { id: currentUser.uid, ...employee.data() };
+            state.attendance = attendance.exists() ? [attendance.data()] : [];
+            renderEmployees();
+        }
+        showError('✓ Información actualizada desde Firebase.');
+    } catch (e) {
+        showError('No se pudo actualizar desde Firebase: ' + errorText(e));
+    } finally {
+        refreshingData = false;
+        button.disabled = false;
+        button.textContent = '↻ Actualizar';
+    }
+}
+$('#refreshTimeCore').onclick = refreshTimeCore;
 function shift(n) { const d = new Date(selectedDate + 'T12:00:00'); d.setDate(d.getDate() + n); selectedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; if (selectedDate > todayKey())
     selectedDate = todayKey(); renderAdmin(); }
 $('#prevDay').onclick = () => shift(-1);

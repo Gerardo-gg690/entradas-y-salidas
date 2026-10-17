@@ -1,0 +1,1 @@
+TimeCore v34: botón Actualizar para empleados y jefa (lectura directa del servidor, sin cerrar sesión); protección frente a marcaciones simultáneas mientras se comprueba GPS; lectura desde servidor tras la transacción de marcación y actualización inmediata del estado. No cambia reglas de Firestore. Se recomienda prueba real en dispositivos y red.

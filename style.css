@@ -2360,3 +2360,8 @@ input {
 .adminLogoutTop:disabled { opacity:.6; cursor:wait; }
 .adminTopRight { flex-wrap:wrap; }
 @media(max-width:650px) { .adminLogoutTop { padding:10px 12px; font-size:13px; } }
+
+/* Actualización manual para móvil y escritorio */
+#refreshTimeCore{border:1px solid rgba(130,180,220,.45);border-radius:12px;padding:9px 13px;background:rgba(25,60,80,.75);color:#fff;font-weight:700;cursor:pointer;white-space:nowrap}
+#refreshTimeCore:disabled{opacity:.55;cursor:wait}
+@media(max-width:650px){#refreshTimeCore{padding:8px;font-size:12px}.headerActions{flex-wrap:wrap;justify-content:flex-end}}
