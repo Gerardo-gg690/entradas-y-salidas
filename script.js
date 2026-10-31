@@ -45,9 +45,8 @@ function calc(r) {
 }
 function periodPayroll(employeeId, start, end) {
     const cap = Math.max(1, Number(state.config.ordinaryFortnightHours ?? defaults.ordinaryFortnightHours));
-    const employee = state.employees.find(item => item.id === employeeId);
-    const configuredSalary = employee?.halfSalary ?? state.config.halfSalary;
-    const basePay = Math.max(0, Number(configuredSalary ?? defaults.halfSalary));
+    // Un único sueldo base quincenal para todo el personal; se ignoran valores individuales antiguos.
+    const basePay = Math.max(0, Number(state.config.halfSalary ?? defaults.halfSalary));
     const ordinaryHourlyRate = basePay / cap;
     const extraRate = Math.max(0, Number(state.config.extraRate ?? defaults.extraRate));
     const rows = state.attendance.filter(r => r.employeeId === employeeId && r.date >= start && r.date <= end && r.clock_in && r.clock_out)
@@ -446,21 +445,12 @@ function renderAdmin() {
     $('#presentCount').textContent = present;
     $('#extraToday').textContent = extra.toFixed(2) + ' h';
     $('#moneyToday').textContent = $('#dailyGrandTotal').textContent = '$' + money.toFixed(2);
-    $('#formulaInfo').textContent = `Cada empleado tiene su sueldo quincenal configurado. Límite: ${Number(c.ordinaryFortnightHours ?? defaults.ordinaryFortnightHours)} h ordinarias · Hora extra: $${Number(c.extraRate ?? defaults.extraRate).toFixed(2)}.`;
+    $('#formulaInfo').textContent = `Sueldo base general: $${Number(c.halfSalary ?? defaults.halfSalary).toFixed(2)} por quincena. Límite: ${Number(c.ordinaryFortnightHours ?? defaults.ordinaryFortnightHours)} h ordinarias · Hora extra: $${Number(c.extraRate ?? defaults.extraRate).toFixed(2)}.`;
     $('#activity').innerHTML = state.employees.map(e => { const r = record(e.id, selectedDate); return r?.clock_in ? `<div>${esc(e.name)} · Entrada ${fmt(r.clock_in)} · Salida ${fmt(r.clock_out)}</div>` : ''; }).join('') || '<p>No hay marcaciones en esta fecha.</p>';
     const list = $('#adminEmployees'); list.innerHTML = '';
     state.employees.forEach(e => {
         const div = document.createElement('div'); div.className = 'adminEmp';
-        div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')} · Sueldo quincenal: $${Number(e.halfSalary ?? state.config.halfSalary ?? defaults.halfSalary).toFixed(2)}</small></div><div class="employee-actions"><button type="button" class="setSalary">Sueldo</button><button type="button" class="deactivate">Desactivar</button></div>`;
-        div.querySelector('.setSalary').onclick = async () => {
-            const current = Number(e.halfSalary ?? state.config.halfSalary ?? defaults.halfSalary);
-            const value = prompt(`Sueldo base quincenal para ${e.name} (USD):`, current.toFixed(2));
-            if (value === null) return;
-            const amount = Number(value);
-            if (!Number.isFinite(amount) || amount < 0) return alert('Ingresa un sueldo válido, igual o mayor que cero.');
-            try { await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { halfSalary: amount }, { merge: true }); showError('Sueldo individual actualizado.'); }
-            catch (err) { alert(errorText(err)); }
-        };
+        div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')}</small></div><div class="employee-actions"><button type="button" class="deactivate">Desactivar</button></div>`;
         div.querySelector('.deactivate').onclick = async () => {
             if (!confirm('¿Desactivar a este empleado? Su historial permanecerá guardado.')) return;
             try { await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { active: false }, { merge: true }); showError('Empleado desactivado'); }
@@ -715,8 +705,8 @@ $('#nextDay').onclick = () => shift(1);
 
 async function addEmployee() {
   if (currentUser?.uid !== ADMIN_UID) return alert('Solo la administradora puede agregar empleados.');
-  const name=$('#newName').value.trim(), dept=$('#newDept').value.trim(), username=$('#newUsername').value.trim(), password=$('#newPin').value, halfSalary=Number($('#newHalfSalary').value);
-  if (!name || !dept || !username || password.length<6 || !Number.isFinite(halfSalary) || halfSalary<0) return alert('Completa todos los campos, incluido el sueldo quincenal. La contraseña necesita al menos 6 caracteres.');
+  const name=$('#newName').value.trim(), dept=$('#newDept').value.trim(), username=$('#newUsername').value.trim(), password=$('#newPin').value;
+  if (!name || !dept || !username || password.length<6) return alert('Completa nombre, departamento y usuario. La contraseña necesita al menos 6 caracteres.');
   if (!/^[a-zA-Z0-9._-]+$/.test(username)) return alert('El usuario solo admite letras, números, puntos, guiones y guion bajo.');
   const button=$('#addEmployee'); button.disabled=true;
   let secondaryApp=null, secondaryAuth=null, created=null;
@@ -724,8 +714,8 @@ async function addEmployee() {
     secondaryApp=TC.initializeApp(window.TIMECORE_FIREBASE_CONFIG,'timecore-create-employee');
     secondaryAuth=TC.getAuth(secondaryApp);
     created=await TC.createUserWithEmailAndPassword(secondaryAuth,loginEmail(username),password);
-    await TC.setDoc(TC.doc(TC.db,'employees',created.user.uid),{name,dept,username,halfSalary,active:true,createdAt:TC.serverTimestamp()});
-    for(const id of ['newName','newDept','newUsername','newPin','newHalfSalary']) $('#'+id).value='';
+    await TC.setDoc(TC.doc(TC.db,'employees',created.user.uid),{name,dept,username,active:true,createdAt:TC.serverTimestamp()});
+    for(const id of ['newName','newDept','newUsername','newPin']) $('#'+id).value='';
     showError('✓ Empleado agregado correctamente.');
   } catch(err) {
     alert('No se pudo agregar el empleado: '+errorText(err)+(created?'\nSe creó la cuenta de acceso, pero no el perfil. No vuelvas a crearla sin revisar Firebase.':''));
