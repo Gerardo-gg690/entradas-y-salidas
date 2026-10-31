@@ -1,0 +1,18 @@
+TIMECORE BON HOUSE — V43
+
+CORRECCIÓN DE PLANILLA:
+- El sueldo base quincenal ahora se guarda por empleado en employees/{uid}.halfSalary.
+- Al crear un empleado, la administradora debe indicar su sueldo quincenal individual.
+- En la lista de personal hay un botón "Sueldo" para modificar el sueldo individual de cada empleado.
+- Para empleados antiguos que todavía no tengan halfSalary individual, se usa el sueldo base general configurado en Configuración de pago. Al editar su sueldo, queda guardado individualmente.
+- El pago ordinario se calcula proporcionalmente: horas ordinarias acumuladas * (sueldo quincenal individual / límite de horas ordinarias).
+- Al completar el límite ordinario se alcanza el sueldo quincenal individual. Las horas posteriores se pagan como extras con la tarifa configurada.
+- El límite de horas ordinarias y la tarifa extra siguen siendo configurables globalmente.
+- No se modificaron reglas de Firestore ni validaciones GPS.
+
+VALIDACIÓN:
+- Revisar en la lista de personal el sueldo mostrado junto a cada empleado.
+- Probar con un empleado de sueldo $204 y 44 horas: pago ordinario esperado $102.00 si el límite es 88.
+- Probar con un empleado de sueldo $300 y 44 horas: pago ordinario esperado $150.00 si el límite es 88.
+- Probar 88 horas: debe alcanzar el sueldo quincenal individual.
+- Probar 90 horas: sueldo quincenal individual + 2 horas extra.

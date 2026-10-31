@@ -44,10 +44,12 @@ function calc(r) {
     return { h: Math.max(0, elapsed - permissionHours(r)) };
 }
 function periodPayroll(employeeId, start, end) {
-    const cap = Math.max(1, Number(state.config.ordinaryFortnightHours) || 88);
-    const basePay = Math.max(0, Number(state.config.halfSalary) || 204);
+    const cap = Math.max(1, Number(state.config.ordinaryFortnightHours ?? defaults.ordinaryFortnightHours));
+    const employee = state.employees.find(item => item.id === employeeId);
+    const configuredSalary = employee?.halfSalary ?? state.config.halfSalary;
+    const basePay = Math.max(0, Number(configuredSalary ?? defaults.halfSalary));
     const ordinaryHourlyRate = basePay / cap;
-    const extraRate = Math.max(0, Number(state.config.extraRate) || 3);
+    const extraRate = Math.max(0, Number(state.config.extraRate ?? defaults.extraRate));
     const rows = state.attendance.filter(r => r.employeeId === employeeId && r.date >= start && r.date <= end && r.clock_in && r.clock_out)
         .sort((a, b) => a.date.localeCompare(b.date));
     let hours = 0, ordinaryHours = 0, extraHours = 0;
@@ -444,13 +446,22 @@ function renderAdmin() {
     $('#presentCount').textContent = present;
     $('#extraToday').textContent = extra.toFixed(2) + ' h';
     $('#moneyToday').textContent = $('#dailyGrandTotal').textContent = '$' + money.toFixed(2);
-    $('#formulaInfo').textContent = `Quincena: ${c.ordinaryFortnightHours || 88} h ordinarias = $${Number(c.halfSalary || 204).toFixed(2)} · Cada hora adicional = $${Number(c.extraRate || 3).toFixed(2)}.`;
+    $('#formulaInfo').textContent = `Cada empleado tiene su sueldo quincenal configurado. Límite: ${Number(c.ordinaryFortnightHours ?? defaults.ordinaryFortnightHours)} h ordinarias · Hora extra: $${Number(c.extraRate ?? defaults.extraRate).toFixed(2)}.`;
     $('#activity').innerHTML = state.employees.map(e => { const r = record(e.id, selectedDate); return r?.clock_in ? `<div>${esc(e.name)} · Entrada ${fmt(r.clock_in)} · Salida ${fmt(r.clock_out)}</div>` : ''; }).join('') || '<p>No hay marcaciones en esta fecha.</p>';
     const list = $('#adminEmployees'); list.innerHTML = '';
     state.employees.forEach(e => {
         const div = document.createElement('div'); div.className = 'adminEmp';
-        div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')}</small></div><button>Desactivar</button>`;
-        div.querySelector('button').onclick = async () => {
+        div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')} · Sueldo quincenal: $${Number(e.halfSalary ?? state.config.halfSalary ?? defaults.halfSalary).toFixed(2)}</small></div><div class="employee-actions"><button type="button" class="setSalary">Sueldo</button><button type="button" class="deactivate">Desactivar</button></div>`;
+        div.querySelector('.setSalary').onclick = async () => {
+            const current = Number(e.halfSalary ?? state.config.halfSalary ?? defaults.halfSalary);
+            const value = prompt(`Sueldo base quincenal para ${e.name} (USD):`, current.toFixed(2));
+            if (value === null) return;
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || amount < 0) return alert('Ingresa un sueldo válido, igual o mayor que cero.');
+            try { await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { halfSalary: amount }, { merge: true }); showError('Sueldo individual actualizado.'); }
+            catch (err) { alert(errorText(err)); }
+        };
+        div.querySelector('.deactivate').onclick = async () => {
             if (!confirm('¿Desactivar a este empleado? Su historial permanecerá guardado.')) return;
             try { await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { active: false }, { merge: true }); showError('Empleado desactivado'); }
             catch (err) { alert(errorText(err)); }
@@ -584,9 +595,9 @@ ${isPayslip ? `
 <table class="moneyTable">
   <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
   <tbody>
-    <tr><td>HORAS EXTRAS TOTALES (solo después de superar las 88 h)</td><td><strong>${fmtHours(payroll.extraHours)}</strong></td></tr>
+    <tr><td>HORAS EXTRAS TOTALES (solo después de superar el límite ordinario)</td><td><strong>${fmtHours(payroll.extraHours)}</strong></td></tr>
     <tr><td>Pago por horas ordinarias laboradas</td><td>$${ordinary.toFixed(2)}</td></tr>
-    <tr><td>Pago de horas extras (${fmtHours(payroll.extraHours)} × $${Number(state.config.extraRate || 3).toFixed(2)}/h)</td><td>$${overtime.toFixed(2)}</td></tr>
+    <tr><td>Pago de horas extras (${fmtHours(payroll.extraHours)} × $${Number(state.config.extraRate ?? defaults.extraRate).toFixed(2)}/h)</td><td>$${overtime.toFixed(2)}</td></tr>
     <tr><td>Descuentos y ajustes</td><td>No configurados</td></tr>
   </tbody>
 </table>
@@ -602,7 +613,7 @@ ${isPayslip ? `
   <div><span>Permisos sin goce</span><strong>${permission.toFixed(2)} h</strong></div>
   <div><span>Horas extras laboradas</span><strong>${fmtHours(payroll.extraHours)}</strong></div>
   <div><span>Pago por horas ordinarias laboradas</span><strong>$${ordinary.toFixed(2)}</strong></div>
-  <div><span>Pago de horas extra ($${Number(state.config.extraRate || 3).toFixed(2)} por hora)</span><strong>$${overtime.toFixed(2)}</strong></div>
+  <div><span>Pago de horas extra ($${Number(state.config.extraRate ?? defaults.extraRate).toFixed(2)} por hora)</span><strong>$${overtime.toFixed(2)}</strong></div>
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
 </section>
 `}
@@ -704,8 +715,8 @@ $('#nextDay').onclick = () => shift(1);
 
 async function addEmployee() {
   if (currentUser?.uid !== ADMIN_UID) return alert('Solo la administradora puede agregar empleados.');
-  const name=$('#newName').value.trim(), dept=$('#newDept').value.trim(), username=$('#newUsername').value.trim(), password=$('#newPin').value;
-  if (!name || !dept || !username || password.length<6) return alert('Completa todos los campos. La contraseña necesita al menos 6 caracteres.');
+  const name=$('#newName').value.trim(), dept=$('#newDept').value.trim(), username=$('#newUsername').value.trim(), password=$('#newPin').value, halfSalary=Number($('#newHalfSalary').value);
+  if (!name || !dept || !username || password.length<6 || !Number.isFinite(halfSalary) || halfSalary<0) return alert('Completa todos los campos, incluido el sueldo quincenal. La contraseña necesita al menos 6 caracteres.');
   if (!/^[a-zA-Z0-9._-]+$/.test(username)) return alert('El usuario solo admite letras, números, puntos, guiones y guion bajo.');
   const button=$('#addEmployee'); button.disabled=true;
   let secondaryApp=null, secondaryAuth=null, created=null;
@@ -713,8 +724,8 @@ async function addEmployee() {
     secondaryApp=TC.initializeApp(window.TIMECORE_FIREBASE_CONFIG,'timecore-create-employee');
     secondaryAuth=TC.getAuth(secondaryApp);
     created=await TC.createUserWithEmailAndPassword(secondaryAuth,loginEmail(username),password);
-    await TC.setDoc(TC.doc(TC.db,'employees',created.user.uid),{name,dept,username,active:true,createdAt:TC.serverTimestamp()});
-    for(const id of ['newName','newDept','newUsername','newPin']) $('#'+id).value='';
+    await TC.setDoc(TC.doc(TC.db,'employees',created.user.uid),{name,dept,username,halfSalary,active:true,createdAt:TC.serverTimestamp()});
+    for(const id of ['newName','newDept','newUsername','newPin','newHalfSalary']) $('#'+id).value='';
     showError('✓ Empleado agregado correctamente.');
   } catch(err) {
     alert('No se pudo agregar el empleado: '+errorText(err)+(created?'\nSe creó la cuenta de acceso, pero no el perfil. No vuelvas a crearla sin revisar Firebase.':''));
@@ -727,7 +738,7 @@ async function addEmployee() {
 
 $('#addEmployee').onclick = addEmployee;
 $('#applyConfig').onclick = async () => { const next = {}; for (const id of Object.keys(defaults)) {
-    const n = Number($('#' + id).value);
+    const raw = $('#' + id).value; const n = Number(raw);
     if (!Number.isFinite(n) || n < 0 || id === 'ordinaryFortnightHours' && n === 0)
         return alert('Revisa los valores de pago.');
     next[id] = n;

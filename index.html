@@ -580,7 +580,7 @@
           Personal
          </h3>
          <p class="muted">
-          Agrega aquí los nombres reales. No hay empleados precargados.
+          Agrega cada empleado con su propio sueldo quincenal. Puedes modificarlo después desde la lista de personal.
          </p>
          <label>
           Nombre completo
@@ -593,6 +593,10 @@
          <label>
           Usuario
           <input id="newUsername" placeholder="ej. maria.lopez"/>
+         </label>
+         <label>
+          Sueldo base por quincena ($)
+          <input id="newHalfSalary" min="0" step=".01" type="number" placeholder="Ej. 204.00" required/>
          </label>
          <label>
           Contraseña del empleado
