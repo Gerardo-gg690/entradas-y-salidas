@@ -1,0 +1,17 @@
+TIMEC0RE BON HOUSE — VERSIÓN 38
+
+CORRECCIÓN DE PDF Y DESGLOSE DE HORAS
+
+- La boleta quincenal ahora incluye una tabla diaria con fecha, entrada, salida y horas trabajadas ese día.
+- El tiempo diario se muestra en horas y minutos (por ejemplo: 8 h 17 min, 9 h 00 min).
+- Se agregó un apartado separado de RESUMEN DE HORAS EXTRAS.
+- Las horas extras acumuladas solo comienzan después de superar las 88 horas ordinarias de la quincena.
+- El PDF separa total trabajado, límite ordinario, horas extras, pago base, pago extra y total estimado.
+- Se actualizó la versión de caché para cargar los archivos nuevos.
+
+REGLAS ECONÓMICAS CONFIGURADAS
+- Pago diario: $13.60, con máximo de $204.00 por quincena (15 días).
+- Límite ordinario quincenal: 88 horas.
+- Después de 88 horas: $3.00 por hora extra, proporcional por minutos.
+
+No se modificaron registros de Firebase ni las reglas de Firestore.
