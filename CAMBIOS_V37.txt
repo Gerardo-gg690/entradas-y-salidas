@@ -1,0 +1,15 @@
+TIMEC ORE BON HOUSE — V37
+
+CORRECCIÓN DE PLANILLA Y PDF
+- Pago diario ordinario: $13.60 por día registrado, con tope de $204.00 por quincena.
+- Las horas trabajadas se acumulan cronológicamente dentro de la quincena.
+- No se generan horas extra hasta superar 88 horas acumuladas.
+- Después de las 88 horas, cada hora extra se paga a $3.00; los minutos se pagan proporcionalmente.
+- El detalle diario asigna $13.60 de base (hasta alcanzar $204) y agrega únicamente las extras que correspondan al día en que se cruza el límite.
+- Tablas y PDF muestran duraciones como horas y minutos, por ejemplo: 8 h 17 min.
+- Se actualizó el nombre de caché del service worker para evitar servir archivos antiguos.
+
+IMPORTANTE
+- No se modifican ni eliminan datos de Firebase.
+- No se cambiaron las reglas de Firestore ni la validación GPS de 50 metros.
+- Revisar el resultado de la planilla contra los registros reales antes de usarlo para pagos.

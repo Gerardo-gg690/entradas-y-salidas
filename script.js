@@ -9,6 +9,7 @@ let markingInProgress = false;
 let state = { employees: [], attendance: [], closures: [], config: { ...defaults } }, selectedDate = todayKey(), currentUser = null, profile = null, unsubs = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = t => t ? new Date(t).toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' }) : '—';
+const fmtHours = value => { const mins = Math.max(0, Math.round((Number(value) || 0) * 60)); return `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min`; };
 const prettyDate = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); };
 const uname = s => s.trim().toLowerCase();
 const loginEmail = s => s.includes('@') ? s.trim() : `${uname(s)}@timecore.invalid`;
@@ -45,24 +46,27 @@ function calc(r) {
 function periodPayroll(employeeId, start, end) {
     const cap = Math.max(1, Number(state.config.ordinaryFortnightHours) || 88);
     const basePay = Math.max(0, Number(state.config.halfSalary) || 204);
+    const dailyPay = 13.60;
     const extraRate = Math.max(0, Number(state.config.extraRate) || 3);
-    const rows = state.attendance.filter(r => r.employeeId === employeeId && r.date >= start && r.date <= end)
+    const rows = state.attendance.filter(r => r.employeeId === employeeId && r.date >= start && r.date <= end && r.clock_in && r.clock_out)
         .sort((a, b) => a.date.localeCompare(b.date));
-    let hours = 0, ordinaryHours = 0, extraHours = 0;
+    let hours = 0, ordinaryHours = 0, extraHours = 0, basePaid = 0;
     const byDate = new Map();
     for (const row of rows) {
         const h = calc(row).h;
         const before = hours;
         const ordinary = Math.min(h, Math.max(0, cap - before));
         const extra = Math.max(0, h - ordinary);
-        const base = ordinary * (basePay / cap);
+        // El sueldo ordinario se paga por día: $13.60, hasta $204 por quincena.
+        // Las horas/minutos solo generan extra cuando el acumulado cruza las 88 h.
+        const base = Math.min(dailyPay, Math.max(0, basePay - basePaid));
         const extraPay = extra * extraRate;
-        hours += h; ordinaryHours += ordinary; extraHours += extra;
+        hours += h; ordinaryHours += ordinary; extraHours += extra; basePaid += base;
         byDate.set(row.date, { h, ordinary, extra, base, extraPay, total: base + extraPay });
     }
-    const base = Math.min(hours, cap) * (basePay / cap);
-    const overtime = Math.max(0, hours - cap) * extraRate;
-    return { hours, ordinaryHours, extraHours, base: Number(base.toFixed(2)), overtime: Number(overtime.toFixed(2)), total: Number((base + overtime).toFixed(2)), byDate };
+    const base = Number(Math.min(basePay, basePaid).toFixed(2));
+    const overtime = Number((extraHours * extraRate).toFixed(2));
+    return { hours, ordinaryHours, extraHours, base, overtime, total: Number((base + overtime).toFixed(2)), byDate };
 }
 function isOnPermission(r) { const b = r?.permissionBreaks || []; return b.length > 0 && !b[b.length - 1].end; }
 // El cierre de quincena usa una clave única YYYY-MM-DD_YYYY-MM-DD.
@@ -429,7 +433,7 @@ function renderAdmin() {
         if (selectedDate === todayKey() && r?.clock_in && !r.clock_out) present++;
         extra += p.extra; money += p.total;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td><div class="namePdfCell"><div><b>${esc(e.name)}</b><br><small>${esc(e.dept || '—')}</small></div><button class="miniPdf">PDF quincenal</button></div></td><td>${fmt(r?.clock_in)}${r?.clock_in ? '<br><button class="editShift" type="button">Editar horas</button>' : ''}</td><td>${fmt(r?.clock_out)}${r?.exitSource === 'admin' ? '<br><small>Salida por jefa</small>' : ''}${isOnPermission(r) ? '<br><small>Fuera con permiso</small>' : ''}${r?.clock_in && !r?.clock_out ? '<br><button class="manualExit">Registrar salida</button>' : ''}${r?.correctionHistory?.length ? '<br><small>Correcciones: ' + r.correctionHistory.length + '</small>' : ''}</td><td>${p.h.toFixed(2)} h${perm > 0 ? `<br><small>Permiso no pagado: ${perm.toFixed(2)} h</small>` : ''}</td><td>${p.extra.toFixed(2)} h</td><td>$${p.base.toFixed(2)}</td><td>$${p.extraPay.toFixed(2)}</td><td><b>$${p.total.toFixed(2)}</b></td>`;
+        tr.innerHTML = `<td><div class="namePdfCell"><div><b>${esc(e.name)}</b><br><small>${esc(e.dept || '—')}</small></div><button class="miniPdf">PDF quincenal</button></div></td><td>${fmt(r?.clock_in)}${r?.clock_in ? '<br><button class="editShift" type="button">Editar horas</button>' : ''}</td><td>${fmt(r?.clock_out)}${r?.exitSource === 'admin' ? '<br><small>Salida por jefa</small>' : ''}${isOnPermission(r) ? '<br><small>Fuera con permiso</small>' : ''}${r?.clock_in && !r?.clock_out ? '<br><button class="manualExit">Registrar salida</button>' : ''}${r?.correctionHistory?.length ? '<br><small>Correcciones: ' + r.correctionHistory.length + '</small>' : ''}</td><td>${fmtHours(p.h)}${perm > 0 ? `<br><small>Permiso no pagado: ${perm.toFixed(2)} h</small>` : ''}</td><td>${fmtHours(p.extra)}</td><td>$${p.base.toFixed(2)}</td><td>$${p.extraPay.toFixed(2)}</td><td><b>$${p.total.toFixed(2)}</b></td>`;
         tr.querySelector('.miniPdf').onclick = () => exportFortnight(e);
         const editBtn = tr.querySelector('.editShift'); if (editBtn) editBtn.onclick = () => adminEditShift(e, r);
         const exitBtn = tr.querySelector('.manualExit'); if (exitBtn) exitBtn.onclick = () => adminCloseShift(e, r);
@@ -501,9 +505,9 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
       <td>${esc(row.date)}</td>
       <td>${esc(fmt(row.clock_in))}</td>
       <td>${esc(fmt(row.clock_out))}</td>
-      <td class="num">${payment.h.toFixed(2)} h</td>
-      <td class="num">${payment.extra.toFixed(2)} h</td>
-      <td class="num">${unpaidHours.toFixed(2)} h</td>
+      <td class="num">${fmtHours(payment.h)}</td>
+      <td class="num">${fmtHours(payment.extra)}</td>
+      <td class="num">${fmtHours(unpaidHours)}</td>
       <td class="num">$${payment.total.toFixed(2)}</td>
     </tr>`;
     }).join('');
@@ -578,9 +582,9 @@ ${isPayslip ? `
 <table class="moneyTable">
   <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
   <tbody>
-    <tr><td>Horas trabajadas en la quincena</td><td>${worked.toFixed(2)} h</td></tr>
-    <tr><td>Horas ordinarias (máximo ${Number(state.config.ordinaryFortnightHours || 88).toFixed(0)} h)</td><td>$${ordinary.toFixed(2)}</td></tr>
-    <tr><td>Horas extra (${Math.max(0, worked - Number(state.config.ordinaryFortnightHours || 88)).toFixed(2)} h × $${Number(state.config.extraRate || 3).toFixed(2)})</td><td>$${overtime.toFixed(2)}</td></tr>
+    <tr><td>Horas trabajadas en la quincena</td><td>${fmtHours(worked)}</td></tr>
+    <tr><td>Pago base diario acumulado (máximo $${Number(state.config.halfSalary || 204).toFixed(2)})</td><td>$${ordinary.toFixed(2)}</td></tr>
+    <tr><td>Horas extra después de 88 h (${fmtHours(Math.max(0, worked - Number(state.config.ordinaryFortnightHours || 88)))} × $${Number(state.config.extraRate || 3).toFixed(2)}/h)</td><td>$${overtime.toFixed(2)}</td></tr>
     <tr><td>Descuentos y ajustes</td><td>No configurados</td></tr>
   </tbody>
 </table>
@@ -592,10 +596,10 @@ ${isPayslip ? `
 <tbody>${rows || '<tr><td colspan="7">Sin registros en este período.</td></tr>'}</tbody>
 </table>
 <section class="summary">
-  <div><span>Horas trabajadas</span><strong>${worked.toFixed(2)} h</strong></div>
+  <div><span>Horas trabajadas</span><strong>${fmtHours(worked)}</strong></div>
   <div><span>Permisos sin goce</span><strong>${permission.toFixed(2)} h</strong></div>
-  <div><span>Horas ordinarias / horas extra</span><strong>${Math.min(worked, Number(state.config.ordinaryFortnightHours || 88)).toFixed(2)} h / ${Math.max(0, worked - Number(state.config.ordinaryFortnightHours || 88)).toFixed(2)} h</strong></div>
-  <div><span>Pago base (88 h = $204.00)</span><strong>$${ordinary.toFixed(2)}</strong></div>
+  <div><span>Horas ordinarias / horas extra</span><strong>${fmtHours(Math.min(worked, Number(state.config.ordinaryFortnightHours || 88)))} / ${fmtHours(Math.max(0, worked - Number(state.config.ordinaryFortnightHours || 88)))}</strong></div>
+  <div><span>Pago diario ($13.60 × días trabajados; máximo $204.00)</span><strong>$${ordinary.toFixed(2)}</strong></div>
   <div><span>Pago de horas extra ($${Number(state.config.extraRate || 3).toFixed(2)} por hora)</span><strong>$${overtime.toFixed(2)}</strong></div>
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
 </section>
