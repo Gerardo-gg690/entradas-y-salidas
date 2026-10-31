@@ -1,0 +1,14 @@
+TIMECORE BON HOUSE - VERSION 42
+
+CORRECCION DE CALCULO DE PLANILLA:
+- Se eliminó el valor diario fijo de $13.60.
+- El sueldo base quincenal se toma de la configuración halfSalary.
+- Las horas ordinarias máximas se toman de ordinaryFortnightHours.
+- El pago ordinario se calcula proporcionalmente: horas ordinarias trabajadas × (sueldo base quincenal configurado / límite de horas ordinarias configurado).
+- Quien no complete las 88 horas (o el límite configurado) ya no recibe automáticamente el sueldo completo.
+- Al completar el límite ordinario recibe el sueldo base quincenal configurado.
+- Las horas por encima del límite siguen pagándose con la tarifa extra configurada.
+- Se actualizaron los conceptos de los PDF para que no mencionen $13.60.
+- Se actualizó la caché del service worker.
+
+Validación: node --check script.js
