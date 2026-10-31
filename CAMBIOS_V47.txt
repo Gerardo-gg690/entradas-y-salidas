@@ -1,0 +1,12 @@
+CAMBIOS V47 — EDICIÓN DE PERSONAL
+
+- En Personal, cada empleado activo ahora tiene un botón Editar.
+- Se pueden modificar nombre completo y departamento/sucursal.
+- El usuario de acceso y la contraseña no se modifican, para no afectar el inicio de sesión.
+- Guardar cambios actualiza el perfil existente en Firestore; no crea otra cuenta ni altera marcaciones, historial de asistencia o cierres de planilla.
+- Las reglas de Firestore permiten a la administradora actualizar únicamente active, name y dept, con validación de longitud.
+- Se retiró del formulario de alta el campo de sueldo individual; el sueldo se configura de forma general en Configuración de pago.
+- Se actualizó la versión de caché del service worker a v47.
+
+IMPORTANTE PARA PUBLICAR:
+Despliega también el archivo firestore.rules incluido en este ZIP en Firebase Console / Firestore Database / Rules. Si no se publican las reglas nuevas, el botón Editar podría mostrar error de permisos.

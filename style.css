@@ -2365,3 +2365,14 @@ input {
 #refreshTimeCore{border:1px solid rgba(130,180,220,.45);border-radius:12px;padding:9px 13px;background:rgba(25,60,80,.75);color:#fff;font-weight:700;cursor:pointer;white-space:nowrap}
 #refreshTimeCore:disabled{opacity:.55;cursor:wait}
 @media(max-width:650px){#refreshTimeCore{padding:8px;font-size:12px}.headerActions{flex-wrap:wrap;justify-content:flex-end}}
+
+/* Edición de personal — v47 */
+.adminEmp { flex-wrap:wrap; }
+.adminEmpInfo { flex:1 1 180px; min-width:0; }
+.employee-actions,.employeeEditActions { display:flex; flex-wrap:wrap; gap:7px; }
+.employeeEditForm { width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding-top:12px; border-top:1px solid rgba(255,255,255,.09); }
+.employeeEditForm[hidden] { display:none; }
+.employeeEditForm label { display:grid; gap:6px; color:var(--muted,#94a3b8); font-size:.82rem; }
+.employeeEditForm input { width:100%; min-width:0; }
+.employeeEditActions { grid-column:1/-1; }
+@media(max-width:520px) { .employeeEditForm { grid-template-columns:1fr; } }

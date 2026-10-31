@@ -6,7 +6,7 @@
   <title>
    TimeCore | Asistencia y Planilla
   </title>
-  <link href="style.css?v=timecore38" rel="stylesheet"/>
+  <link href="style.css?v=timecore47" rel="stylesheet"/>
   <link href="manifest.webmanifest" rel="manifest"/>
   <meta content="#070d16" name="theme-color"/>
   <meta content="yes" name="apple-mobile-web-app-capable"/>
@@ -580,7 +580,7 @@
           Personal
          </h3>
          <p class="muted">
-          Agrega cada empleado con su propio sueldo quincenal. Puedes modificarlo después desde la lista de personal.
+          Agrega empleados y administra sus datos. El sueldo es general y se configura una sola vez para todo el personal.
          </p>
          <label>
           Nombre completo
@@ -595,14 +595,10 @@
           <input id="newUsername" placeholder="ej. maria.lopez"/>
          </label>
          <label>
-          Sueldo base por quincena ($)
-          <input id="newHalfSalary" min="0" step=".01" type="number" placeholder="Ej. 204.00" required/>
-         </label>
-         <label>
           Contraseña del empleado
           <input autocomplete="new-password" id="newPin" placeholder="Mínimo 6 caracteres" type="password"/>
          </label>
-         <button class="primary" id="addEmployee">
+         <button class="primary" id="addEmployee" type="button">
           Agregar empleado
          </button>
          <div class="adminEmployees" id="adminEmployees">
@@ -683,14 +679,14 @@
   </script>
   <script src="firebase-bridge.js?v=timecore34" type="module" onerror="window.dispatchEvent(new Event('tc-load-error'));">
   </script>
-  <script src="script.js?v=timecore39">
+  <script src="script.js?v=timecore47">
   </script>
   <script src="ui-enhancements.js?v=timecore34">
   </script>
   <script src="location-alert.js?v=timecore34">
   </script>
   <script>
-   if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('./sw.js?v=timecore39', {updateViaCache:'none'}).catch(()=>{});
+   if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('./sw.js?v=timecore47', {updateViaCache:'none'}).catch(()=>{});
   </script>
  </body>
 </html>

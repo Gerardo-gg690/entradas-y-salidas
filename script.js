@@ -455,7 +455,23 @@ function renderAdmin() {
     const list = $('#adminEmployees'); list.innerHTML = '';
     state.employees.forEach(e => {
         const div = document.createElement('div'); div.className = 'adminEmp';
-        div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')}</small></div><div class="employee-actions"><button type="button" class="deactivate">Desactivar</button></div>`;
+        div.innerHTML = `<div class="adminEmpInfo"><b>${esc(e.name)}</b><small>${esc(e.dept || 'Sin departamento')} · @${esc(e.username || '')}</small></div><div class="employee-actions"><button type="button" class="editEmployee">Editar</button><button type="button" class="deactivate">Desactivar</button></div><form class="employeeEditForm" hidden><label>Nombre completo<input name="name" maxlength="100" required value="${esc(e.name || '')}"></label><label>Departamento / sucursal<input name="dept" maxlength="80" required value="${esc(e.dept || '')}"></label><div class="employeeEditActions"><button type="submit" class="primary">Guardar cambios</button><button type="button" class="cancelEdit">Cancelar</button></div></form>`;
+        const editForm = div.querySelector('.employeeEditForm');
+        div.querySelector('.editEmployee').onclick = () => { editForm.hidden = !editForm.hidden; };
+        div.querySelector('.cancelEdit').onclick = () => { editForm.hidden = true; };
+        editForm.onsubmit = async ev => {
+            ev.preventDefault();
+            if (currentUser?.uid !== ADMIN_UID) return alert('Solo la administradora puede editar empleados.');
+            const name = editForm.elements.name.value.trim(), dept = editForm.elements.dept.value.trim();
+            if (!name || !dept) return alert('Completa el nombre y el departamento.');
+            const save = editForm.querySelector('button[type="submit"]'); save.disabled = true;
+            try {
+                await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { name, dept }, { merge: true });
+                showError('✓ Datos del empleado actualizados. Su usuario, contraseña, asistencia e historial de pagos permanecen intactos.');
+                editForm.hidden = true;
+            } catch (err) { alert('No se pudieron guardar los cambios: ' + errorText(err)); }
+            finally { save.disabled = false; }
+        };
         div.querySelector('.deactivate').onclick = async () => {
             if (!confirm('¿Desactivar a este empleado? Su historial permanecerá guardado.')) return;
             try { await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { active: false }, { merge: true }); showError('Empleado desactivado'); }

@@ -11,7 +11,9 @@ service cloud.firestore {
     match /employees/{uid} {
       allow read: if admin() || (signed() && request.auth.uid == uid);
       allow create: if admin() && request.resource.data.keys().hasOnly(['name','dept','username','active','createdAt']) && request.resource.data.active == true;
-      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active']);
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active','name','dept'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['name']) || (request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dept']) || (request.resource.data.dept is string && request.resource.data.dept.size() > 0 && request.resource.data.dept.size() <= 80));
       allow delete: if false;
     }
     function closureIdForDate(date) {
