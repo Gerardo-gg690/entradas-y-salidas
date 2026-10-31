@@ -584,8 +584,6 @@ ${isPayslip ? `
 <table class="moneyTable">
   <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
   <tbody>
-    <tr><td>Total de horas trabajadas en la quincena</td><td>${fmtHours(worked)}</td></tr>
-    <tr><td>Límite de horas ordinarias</td><td>${fmtHours(Number(state.config.ordinaryFortnightHours || 88))}</td></tr>
     <tr><td>HORAS EXTRAS TOTALES (solo después de superar las 88 h)</td><td><strong>${fmtHours(payroll.extraHours)}</strong></td></tr>
     <tr><td>Pago base fijo de la quincena (15 × $13.60)</td><td>$${ordinary.toFixed(2)}</td></tr>
     <tr><td>Pago de horas extras (${fmtHours(payroll.extraHours)} × $${Number(state.config.extraRate || 3).toFixed(2)}/h)</td><td>$${overtime.toFixed(2)}</td></tr>

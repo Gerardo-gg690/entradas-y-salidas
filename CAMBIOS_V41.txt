@@ -1,0 +1,8 @@
+TIMECORE BON HOUSE — VERSIÓN 41
+
+Corrección de documentos PDF:
+1. Boleta de pago: se quitaron también las filas de total de horas trabajadas y límite de horas ordinarias. La boleta queda enfocada en importes: horas extras totales, pago base, pago de extras y total estimado. No incluye la tabla diaria de fechas, entradas, salidas ni horas por día.
+2. Reporte quincenal de horas: conserva el detalle diario de marcaciones y muestra la línea “Horas extras laboradas” con el acumulado de la quincena.
+3. Se actualizó la versión de caché del service worker.
+
+No se modificaron Firebase, reglas, marcaciones ni validación GPS.
