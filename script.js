@@ -4,7 +4,7 @@ const ADMIN_UID = 'tFUODWGOkXeCm18fSO1bKZCm3ms2';
 // Centro fijo de Bon House: comprobar coordenadas antes de usar en producción.
 const WORKPLACE = Object.freeze({ latitude: 13.9871804, longitude: -89.5491599, radiusMeters: 50 });
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-const defaults = { salary: 408, halfSalary: 204, paidDays: 30, normalHours: 8, extraRate: 3 };
+const defaults = { halfSalary: 204, ordinaryFortnightHours: 88, extraRate: 3 };
 let markingInProgress = false;
 let state = { employees: [], attendance: [], closures: [], config: { ...defaults } }, selectedDate = todayKey(), currentUser = null, profile = null, unsubs = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -38,13 +38,31 @@ function permissionHours(r, endTime) {
     }, 0) / 36e5;
 }
 function calc(r) {
-    if (!r?.clock_in || !r?.clock_out)
-        return { h: 0, extra: 0, base: 0, extraPay: 0, total: 0 };
+    if (!r?.clock_in || !r?.clock_out) return { h: 0 };
     const elapsed = Math.max(0, (new Date(r.clock_out) - new Date(r.clock_in)) / 36e5);
-    const h = Math.max(0, elapsed - permissionHours(r)), extra = Math.max(0, h - state.config.normalHours);
-    const normal = Math.min(h, state.config.normalHours), base = normal / state.config.normalHours * (state.config.salary / state.config.paidDays);
-    const extraPay = extra * state.config.extraRate;
-    return { h, extra, base, extraPay, total: base + extraPay };
+    return { h: Math.max(0, elapsed - permissionHours(r)) };
+}
+function periodPayroll(employeeId, start, end) {
+    const cap = Math.max(1, Number(state.config.ordinaryFortnightHours) || 88);
+    const basePay = Math.max(0, Number(state.config.halfSalary) || 204);
+    const extraRate = Math.max(0, Number(state.config.extraRate) || 3);
+    const rows = state.attendance.filter(r => r.employeeId === employeeId && r.date >= start && r.date <= end)
+        .sort((a, b) => a.date.localeCompare(b.date));
+    let hours = 0, ordinaryHours = 0, extraHours = 0;
+    const byDate = new Map();
+    for (const row of rows) {
+        const h = calc(row).h;
+        const before = hours;
+        const ordinary = Math.min(h, Math.max(0, cap - before));
+        const extra = Math.max(0, h - ordinary);
+        const base = ordinary * (basePay / cap);
+        const extraPay = extra * extraRate;
+        hours += h; ordinaryHours += ordinary; extraHours += extra;
+        byDate.set(row.date, { h, ordinary, extra, base, extraPay, total: base + extraPay });
+    }
+    const base = Math.min(hours, cap) * (basePay / cap);
+    const overtime = Math.max(0, hours - cap) * extraRate;
+    return { hours, ordinaryHours, extraHours, base: Number(base.toFixed(2)), overtime: Number(overtime.toFixed(2)), total: Number((base + overtime).toFixed(2)), byDate };
 }
 function isOnPermission(r) { const b = r?.permissionBreaks || []; return b.length > 0 && !b[b.length - 1].end; }
 // El cierre de quincena usa una clave única YYYY-MM-DD_YYYY-MM-DD.
@@ -53,9 +71,8 @@ function closureFor(start, end) { return state.closures.find(item => item.id ===
 function periodTotals(start, end) {
     const people = state.employees.map(employee => {
         const rows = state.attendance.filter(r => r.employeeId === employee.id && r.date >= start && r.date <= end);
-        const base = rows.reduce((sum, r) => sum + calc(r).base, 0);
-        const extra = rows.reduce((sum, r) => sum + calc(r).extraPay, 0);
-        return { employeeId: employee.id, name: employee.name, dept: employee.dept || '', base: Number(base.toFixed(2)), overtime: Number(extra.toFixed(2)), total: Number((base + extra).toFixed(2)), days: rows.length };
+        const payroll = periodPayroll(employee.id, start, end);
+        return { employeeId: employee.id, name: employee.name, dept: employee.dept || '', hours: Number(payroll.hours.toFixed(2)), ordinaryHours: Number(payroll.ordinaryHours.toFixed(2)), extraHours: Number(payroll.extraHours.toFixed(2)), base: payroll.base, overtime: payroll.overtime, total: payroll.total, days: rows.length };
     });
     return { people, total: Number(people.reduce((sum, e) => sum + e.total, 0).toFixed(2)) };
 }
@@ -183,79 +200,64 @@ function renderEmployees() {
 function metersBetween(aLat, aLon, bLat, bLon) { const rad = Math.PI / 180, R = 6371000; const dLat = (bLat - aLat) * rad, dLon = (bLon - aLon) * rad; const h = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin(dLon / 2) ** 2; return 2 * R * Math.asin(Math.min(1, Math.sqrt(h))); }
 /* GEOLOCALIZACIÓN: conserva el radio de 50 metros. */
 async function verifyWorkplace() {
-    if (!navigator.geolocation)
-        throw new Error('Este dispositivo no permite obtener la ubicación.');
-    if (!window.isSecureContext)
-        throw new Error('Abre TimeCore desde su enlace HTTPS para usar la ubicación.');
-    showError('Comprobando ubicación respecto a Bon House (radio 50 m)…');
-    // Pedir varias mediciones frescas: la primera suele ser una posición aproximada.
-    // Una lectura solo es suficiente cuando su margen de error queda dentro del radio.
-    const deadline = Date.now() + 45000;
-    let best = null, lastError = null, outsideReadings = 0;
-    for (let attempt = 0; attempt < 4 && Date.now() < deadline; attempt++) {
-        showError(`Buscando ubicación precisa… intento ${attempt + 1} de 4`);
+    if (!navigator.geolocation) throw new Error('Este dispositivo no permite obtener la ubicación.');
+    if (!window.isSecureContext) throw new Error('Abre TimeCore desde su enlace HTTPS para usar la ubicación.');
+    showError('Comprobando ubicación precisa de Bon House (radio 50 m)…');
+    let best = null, lastError = null;
+    // Primera lectura rápida (puede reutilizar una posición de hasta 3 segundos); segunda fresca solo si hace falta.
+    for (let attempt = 0; attempt < 2; attempt++) {
         try {
-            const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: Math.min(12000, Math.max(1000, deadline - Date.now())), maximumAge: 0 }));
+            const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true, timeout: attempt === 0 ? 8000 : 6500, maximumAge: attempt === 0 ? 3000 : 0
+            }));
             const { latitude, longitude, accuracy } = pos.coords;
-            if (![latitude, longitude, accuracy].every(Number.isFinite))
-                continue;
+            if (![latitude, longitude, accuracy].every(Number.isFinite)) continue;
             const distance = metersBetween(latitude, longitude, WORKPLACE.latitude, WORKPLACE.longitude);
             const candidate = { distance, accuracy };
-            if (!best || accuracy < best.accuracy)
-                best = candidate;
-            if (distance + accuracy <= WORKPLACE.radiusMeters)
-                return candidate;
-            // No declarar fuera del local por una sola lectura GPS imprecisa.
-            // Dos mediciones inequívocamente fuera permiten mostrar la alerta visual.
+            if (!best || accuracy < best.accuracy) best = candidate;
+            // Se exige que incluso el margen de error quede dentro de los 50 metros.
+            if (distance + accuracy <= WORKPLACE.radiusMeters) return candidate;
             if (distance - accuracy > WORKPLACE.radiusMeters) {
-                outsideReadings++;
-                if (outsideReadings >= 2)
-                    throw new Error(`Estás fuera del radio de ${WORKPLACE.radiusMeters} m de Bon House (distancia estimada: ${Math.round(distance)} m).`);
+                throw new Error(`Estás fuera del radio de ${WORKPLACE.radiusMeters} m de Bon House (distancia estimada: ${Math.round(distance)} m).`);
             }
-        }
-        catch (e) {
-            if (e.message?.startsWith('Estás fuera'))
-                throw e;
+            showError('Afinando GPS para confirmar el límite de 50 metros…');
+        } catch (e) {
+            if (e.message?.startsWith('Estás fuera')) throw e;
             lastError = e;
-            if (e.code === 1)
-                throw new Error('Permite la ubicación precisa para TimeCore en los ajustes del teléfono.');
+            if (e.code === 1) throw new Error('Permite la ubicación precisa para TimeCore en los ajustes del teléfono.');
+            if (attempt === 0) showError('GPS inicial impreciso; realizando una comprobación precisa…');
         }
     }
-    if (best)
-        throw new Error(`Ubicación no confirmada: el GPS indica ${Math.round(best.distance)} m de distancia con precisión ±${Math.round(best.accuracy)} m. No se registró la marcación. Activa ubicación precisa y vuelve a intentar.`);
-    throw new Error('No se pudo obtener tu ubicación. Activa ubicación precisa y vuelve a intentar. ' + (lastError?.message || ''));
+    if (best) throw new Error(`Ubicación no confirmada: GPS a ${Math.round(best.distance)} m con precisión ±${Math.round(best.accuracy)} m. No se registró la marcación. Acércate al local o activa ubicación precisa.`);
+    throw new Error('No se pudo obtener tu ubicación. Activa el GPS y vuelve a intentar. ' + (lastError?.message || ''));
 }
 async function markAttendance() {
     if (markingInProgress) return;
-    if (!currentUser || !profile || currentUser.uid === ADMIN_UID)
-        return;
+    if (!currentUser || !profile || currentUser.uid === ADMIN_UID) return;
     markingInProgress = true;
     renderEmployees();
     try {
         const locationCheck = await verifyWorkplace(), date = todayKey(), ref = TC.doc(TC.db, 'attendance', `${currentUser.uid}_${date}`);
-        await TC.runTransaction(TC.db, async (tx) => {
-            const snap = await tx.get(ref), now = new Date().toISOString();
-            if (!snap.exists())
-                tx.set(ref, { employeeId: currentUser.uid, date, clock_in: now, clock_out: null, createdAt: TC.serverTimestamp() });
-            else if (!snap.data().clock_out) {
-                if (isOnPermission(snap.data()))
-                    throw new Error('Primero marca Entrada con permiso para reanudar tu jornada.');
+        const now = new Date().toISOString();
+        let savedRecord = null;
+        await TC.runTransaction(TC.db, async tx => {
+            const snap = await tx.get(ref);
+            if (!snap.exists()) {
+                savedRecord = { employeeId: currentUser.uid, date, clock_in: now, clock_out: null };
+                tx.set(ref, { ...savedRecord, createdAt: TC.serverTimestamp() });
+            } else if (!snap.data().clock_out) {
+                if (isOnPermission(snap.data())) throw new Error('Primero marca Entrada con permiso para reanudar tu jornada.');
+                savedRecord = { ...snap.data(), clock_out: now };
                 tx.update(ref, { clock_out: now });
-            }
-            else
-                throw new Error('El turno ya está completo.');
+            } else throw new Error('El turno ya está completo.');
         });
-        // Consultar el servidor para verificar que el cambio quedó persistido.
-        const confirmed = await TC.getDocFromServer(ref);
-        if (!confirmed.exists() || !confirmed.data().clock_in) throw new Error('No se pudo confirmar la marcación en Firebase. Contacta a la jefa antes de reintentar.');
-        state.attendance = [confirmed.data()];
+        // La transacción solo termina cuando Firestore confirma la escritura; evitamos una segunda lectura de red.
+        state.attendance = [{ ...savedRecord, createdAt: savedRecord.createdAt || null }];
         renderEmployees();
-        showError(`✓ Marcación confirmada en Firebase · A ${Math.round(locationCheck.distance)} m de Bon House`);
-    }
-    catch (e) {
+        showError(`✓ Marcación guardada · GPS confirmado a ${Math.round(locationCheck.distance)} m de Bon House`);
+    } catch (e) {
         showError(errorText(e));
-    }
-    finally {
+    } finally {
         markingInProgress = false;
         renderEmployees();
     }
@@ -336,6 +338,51 @@ async function adminCloseShift(e, r) {
         alert('No se pudo registrar la salida: ' + errorText(err));
     }
 }
+async function adminEditShift(e, r) {
+    if (currentUser?.uid !== ADMIN_UID || !r?.clock_in) return;
+    const [start, end] = fortnightRange(r.date);
+    if (closureFor(start, end)) return alert('La quincena está cerrada. No se puede modificar esta marcación.');
+    const toLocalInput = value => {
+        const d = new Date(value);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    };
+    const parseLocal = value => {
+        const m = value.trim().match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})$/);
+        if (!m) return null;
+        const d = new Date(`${m[1]}T${m[2]}:${m[3]}:00`);
+        return Number.isFinite(d.getTime()) && d.getFullYear() === +m[1].slice(0,4) && d.getMonth()+1 === +m[1].slice(5,7) && d.getDate() === +m[1].slice(8,10) && d.getHours() === +m[2] && d.getMinutes() === +m[3] ? d : null;
+    };
+    const entryText = prompt(`Nueva entrada de ${e.name} (AAAA-MM-DD HH:MM):`, toLocalInput(r.clock_in));
+    if (entryText === null) return;
+    const entry = parseLocal(entryText);
+    if (!entry) return alert('La entrada no es válida. Usa AAAA-MM-DD HH:MM.');
+    const entryDateKey = `${entry.getFullYear()}-${String(entry.getMonth()+1).padStart(2,'0')}-${String(entry.getDate()).padStart(2,'0')}`;
+    if (entryDateKey !== r.date) return alert(`La fecha de entrada debe seguir siendo ${r.date}. Para editar otro día, selecciona esa fecha en el calendario.`);
+    const exitText = prompt(`Nueva salida de ${e.name}. Deja vacío si aún no ha salido (AAAA-MM-DD HH:MM):`, r.clock_out ? toLocalInput(r.clock_out) : '');
+    if (exitText === null) return;
+    const exit = exitText.trim() ? parseLocal(exitText) : null;
+    if (exitText.trim() && !exit) return alert('La salida no es válida. Usa AAAA-MM-DD HH:MM o déjala vacía.');
+    if (exit && exit <= entry) return alert('La salida debe ser posterior a la entrada.');
+    if (entry > new Date() || (exit && exit > new Date())) return alert('No se pueden registrar horas futuras.');
+    const reason = prompt('Motivo de la corrección (obligatorio):', 'Corrección de horario autorizada');
+    if (reason === null) return;
+    if (reason.trim().length < 5) return alert('Escribe un motivo de al menos 5 caracteres.');
+    if (!confirm(`¿Guardar estos horarios para ${e.name}?\nEntrada: ${entry.toLocaleString('es-SV')}\nSalida: ${exit ? exit.toLocaleString('es-SV') : 'Pendiente'}\n\nLa corrección quedará en el historial.`)) return;
+    try {
+        const ref = TC.doc(TC.db, 'attendance', `${e.id}_${r.date}`);
+        await TC.runTransaction(TC.db, async tx => {
+            const snap = await tx.get(ref);
+            if (!snap.exists() || snap.data().employeeId !== e.id) throw new Error('La marcación cambió o no existe. Actualiza el panel.');
+            const row = snap.data(), history = Array.isArray(row.correctionHistory) ? row.correctionHistory : [];
+            tx.update(ref, {
+                clock_in: entry.toISOString(), clock_out: exit ? exit.toISOString() : null,
+                correctionHistory: [...history, { previousEntry: row.clock_in, previousExit: row.clock_out || null, newEntry: entry.toISOString(), newExit: exit ? exit.toISOString() : null, reason: reason.trim().slice(0,250), by: currentUser.uid, at: new Date().toISOString() }],
+                lastCorrectionBy: currentUser.uid, lastCorrectionAt: TC.serverTimestamp()
+            });
+        });
+        showError('✓ Entrada y salida corregidas. El historial quedó guardado y la planilla se recalculó.');
+    } catch (err) { alert('No se pudieron corregir las horas: ' + errorText(err)); }
+}
 async function adminRestoreShift(e, r) {
     if (currentUser?.uid !== ADMIN_UID || !r?.clock_in || !r?.clock_out) return;
     const [start, end] = fortnightRange(r.date);
@@ -352,7 +399,7 @@ async function adminRestoreShift(e, r) {
                 throw new Error('La marcación cambió o no existe. Actualiza la página.');
             const row = snap.data();
             const history = Array.isArray(row.correctionHistory) ? row.correctionHistory : [];
-            if (history.length >= 30) throw new Error('Se alcanzó el límite de correcciones de esta jornada.');
+            if (history.length >= 500) throw new Error('El historial de esta jornada alcanzó el límite técnico.');
             tx.update(ref, {
                 clock_out: null,
                 correctionHistory: [...history, { previousExit: row.clock_out, originalEntry: row.clock_in, reason: reason.trim().slice(0, 250), by: currentUser.uid, at: new Date().toISOString() }],
@@ -364,18 +411,50 @@ async function adminRestoreShift(e, r) {
     } catch (err) { alert('No se pudo restablecer la jornada: ' + errorText(err)); }
 }
 /* PANEL ADMINISTRATIVO: métricas y registros del personal. */
-function renderAdmin() { if (currentUser?.uid !== ADMIN_UID)
-    return; renderPayslipOptions(); const c = state.config; for (const id of Object.keys(defaults))
-    $('#' + id).value = c[id]; $('#selectedDateLabel').textContent = prettyDate(selectedDate); $('#todayBadge').textContent = selectedDate === todayKey() ? 'HOY' : ''; $('#nextDay').disabled = selectedDate >= todayKey(); let present = 0, extra = 0, money = 0; const body = $('#payrollBody'); body.innerHTML = ''; state.employees.forEach(e => { const r = record(e.id, selectedDate), p = calc(r), perm = permissionHours(r, r?.clock_out || new Date().toISOString()); if (selectedDate === todayKey() && r?.clock_in && !r.clock_out)
-    present++; extra += p.extra; money += p.total; const tr = document.createElement('tr'); tr.innerHTML = `<td><div class="namePdfCell"><div><b>${esc(e.name)}</b><br><small>${esc(e.dept || '—')}</small></div><button class="miniPdf">PDF quincenal</button></div></td><td>${fmt(r?.clock_in)}</td><td>${fmt(r?.clock_out)}${r?.exitSource === 'admin' ? '<br><small>Salida por jefa</small>' : ''}${isOnPermission(r) ? '<br><small>Fuera con permiso</small>' : ''}${r?.clock_in && !r?.clock_out ? '<br><button class="manualExit">Registrar salida</button>' : ''}${r?.clock_out ? '<br><button class="restoreShift" type="button">Restablecer entrada</button>' : ''}${r?.correctionHistory?.length ? '<br><small>Correcciones: ' + r.correctionHistory.length + '</small>' : ''}</td><td>${p.h.toFixed(2)} h${perm > 0 ? `<br><small>Permiso no pagado: ${perm.toFixed(2)} h</small>` : ''}</td><td>${p.extra.toFixed(2)} h</td><td>$${p.base.toFixed(2)}</td><td>$${p.extraPay.toFixed(2)}</td><td><b>$${p.total.toFixed(2)}</b></td>`; tr.querySelector('.miniPdf').onclick = () => exportFortnight(e); const exitBtn = tr.querySelector('.manualExit'); if (exitBtn)
-    exitBtn.onclick = () => adminCloseShift(e, r); const restoreBtn = tr.querySelector('.restoreShift'); if (restoreBtn) restoreBtn.onclick = () => adminRestoreShift(e, r); body.append(tr); }); $('#presentCount').textContent = present; $('#extraToday').textContent = extra.toFixed(2) + ' h'; $('#moneyToday').textContent = $('#dailyGrandTotal').textContent = '$' + money.toFixed(2); $('#formulaInfo').textContent = `Valor diario: $${(c.salary / c.paidDays).toFixed(2)} · Hora extra: $${c.extraRate.toFixed(2)}.`; $('#activity').innerHTML = state.employees.map(e => { const r = record(e.id, selectedDate); return r?.clock_in ? `<div>${esc(e.name)} · Entrada ${fmt(r.clock_in)} · Salida ${fmt(r.clock_out)}</div>` : ''; }).join('') || '<p>No hay marcaciones en esta fecha.</p>'; const list = $('#adminEmployees'); list.innerHTML = ''; state.employees.forEach(e => { const div = document.createElement('div'); div.className = 'adminEmp'; div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')}</small></div><button>Desactivar</button>`; div.querySelector('button').onclick = async () => { if (!confirm('¿Desactivar a este empleado? Su historial permanecerá guardado.'))
-    return; try {
-    await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { active: false }, { merge: true });
-    showError('Empleado desactivado');
+function renderAdmin() {
+    if (currentUser?.uid !== ADMIN_UID) return;
+    renderPayslipOptions();
+    const c = state.config;
+    for (const id of Object.keys(defaults)) { const input = $('#' + id); if (input) input.value = c[id]; }
+    $('#selectedDateLabel').textContent = prettyDate(selectedDate);
+    $('#todayBadge').textContent = selectedDate === todayKey() ? 'HOY' : '';
+    $('#nextDay').disabled = selectedDate >= todayKey();
+    let present = 0, extra = 0, money = 0;
+    const body = $('#payrollBody'); body.innerHTML = '';
+    const [periodStart, periodEnd] = fortnightRange(selectedDate);
+    state.employees.forEach(e => {
+        const r = record(e.id, selectedDate), payroll = periodPayroll(e.id, periodStart, periodEnd);
+        const p = r ? (payroll.byDate.get(r.date) || { h: 0, extra: 0, base: 0, extraPay: 0, total: 0 }) : { h: 0, extra: 0, base: 0, extraPay: 0, total: 0 };
+        const perm = permissionHours(r, r?.clock_out || new Date().toISOString());
+        if (selectedDate === todayKey() && r?.clock_in && !r.clock_out) present++;
+        extra += p.extra; money += p.total;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><div class="namePdfCell"><div><b>${esc(e.name)}</b><br><small>${esc(e.dept || '—')}</small></div><button class="miniPdf">PDF quincenal</button></div></td><td>${fmt(r?.clock_in)}${r?.clock_in ? '<br><button class="editShift" type="button">Editar horas</button>' : ''}</td><td>${fmt(r?.clock_out)}${r?.exitSource === 'admin' ? '<br><small>Salida por jefa</small>' : ''}${isOnPermission(r) ? '<br><small>Fuera con permiso</small>' : ''}${r?.clock_in && !r?.clock_out ? '<br><button class="manualExit">Registrar salida</button>' : ''}${r?.correctionHistory?.length ? '<br><small>Correcciones: ' + r.correctionHistory.length + '</small>' : ''}</td><td>${p.h.toFixed(2)} h${perm > 0 ? `<br><small>Permiso no pagado: ${perm.toFixed(2)} h</small>` : ''}</td><td>${p.extra.toFixed(2)} h</td><td>$${p.base.toFixed(2)}</td><td>$${p.extraPay.toFixed(2)}</td><td><b>$${p.total.toFixed(2)}</b></td>`;
+        tr.querySelector('.miniPdf').onclick = () => exportFortnight(e);
+        const editBtn = tr.querySelector('.editShift'); if (editBtn) editBtn.onclick = () => adminEditShift(e, r);
+        const exitBtn = tr.querySelector('.manualExit'); if (exitBtn) exitBtn.onclick = () => adminCloseShift(e, r);
+        body.append(tr);
+    });
+    $('#presentCount').textContent = present;
+    $('#extraToday').textContent = extra.toFixed(2) + ' h';
+    $('#moneyToday').textContent = $('#dailyGrandTotal').textContent = '$' + money.toFixed(2);
+    $('#formulaInfo').textContent = `Quincena: ${c.ordinaryFortnightHours || 88} h ordinarias = $${Number(c.halfSalary || 204).toFixed(2)} · Cada hora adicional = $${Number(c.extraRate || 3).toFixed(2)}.`;
+    $('#activity').innerHTML = state.employees.map(e => { const r = record(e.id, selectedDate); return r?.clock_in ? `<div>${esc(e.name)} · Entrada ${fmt(r.clock_in)} · Salida ${fmt(r.clock_out)}</div>` : ''; }).join('') || '<p>No hay marcaciones en esta fecha.</p>';
+    const list = $('#adminEmployees'); list.innerHTML = '';
+    state.employees.forEach(e => {
+        const div = document.createElement('div'); div.className = 'adminEmp';
+        div.innerHTML = `<div><b>${esc(e.name)}</b><small>${esc(e.dept)} · @${esc(e.username || '')}</small></div><button>Desactivar</button>`;
+        div.querySelector('button').onclick = async () => {
+            if (!confirm('¿Desactivar a este empleado? Su historial permanecerá guardado.')) return;
+            try { await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { active: false }, { merge: true }); showError('Empleado desactivado'); }
+            catch (err) { alert(errorText(err)); }
+        };
+        list.append(div);
+    });
+    const allPayroll = state.employees.reduce((sum, e) => sum + periodPayroll(e.id, periodStart, periodEnd).total, 0);
+    $('#fortnight').textContent = '$' + allPayroll.toFixed(2);
+    renderClosures();
 }
-catch (err) {
-    alert(errorText(err));
-} }; list.append(div); }); const [a, b] = fortnightRange(selectedDate); $('#fortnight').textContent = '$' + state.attendance.filter(r => r.date >= a && r.date <= b).reduce((s, r) => s + calc(r).total, 0).toFixed(2); renderClosures(); }
 /* ================================================================
  * BOLETAS DE PAGO QUINCENAL
  * - Datos de Firestore ya cargados en state.
@@ -412,15 +491,12 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
     const records = state.attendance
         .filter(row => row.employeeId === employee.id && row.date >= start && row.date <= end)
         .sort((a, b) => a.date.localeCompare(b.date));
-    let ordinary = 0, overtime = 0, permission = 0, total = 0, worked = 0;
+    const payroll = periodPayroll(employee.id, start, end);
+    let ordinary = payroll.base, overtime = payroll.overtime, permission = 0, total = payroll.total, worked = payroll.hours;
     const rows = records.map(row => {
-        const payment = calc(row);
+        const payment = payroll.byDate.get(row.date) || { h: 0, extra: 0, total: 0 };
         const unpaidHours = permissionHours(row, row.clock_out || new Date().toISOString());
-        ordinary += payment.base;
-        overtime += payment.extraPay;
         permission += unpaidHours;
-        worked += payment.h;
-        total += payment.total;
         return `<tr>
       <td>${esc(row.date)}</td>
       <td>${esc(fmt(row.clock_in))}</td>
@@ -502,8 +578,9 @@ ${isPayslip ? `
 <table class="moneyTable">
   <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
   <tbody>
-    <tr><td>Remuneración ordinaria calculada</td><td>$${ordinary.toFixed(2)}</td></tr>
-    <tr><td>Remuneración por horas extraordinarias</td><td>$${overtime.toFixed(2)}</td></tr>
+    <tr><td>Horas trabajadas en la quincena</td><td>${worked.toFixed(2)} h</td></tr>
+    <tr><td>Horas ordinarias (máximo ${Number(state.config.ordinaryFortnightHours || 88).toFixed(0)} h)</td><td>$${ordinary.toFixed(2)}</td></tr>
+    <tr><td>Horas extra (${Math.max(0, worked - Number(state.config.ordinaryFortnightHours || 88)).toFixed(2)} h × $${Number(state.config.extraRate || 3).toFixed(2)})</td><td>$${overtime.toFixed(2)}</td></tr>
     <tr><td>Descuentos y ajustes</td><td>No configurados</td></tr>
   </tbody>
 </table>
@@ -517,8 +594,9 @@ ${isPayslip ? `
 <section class="summary">
   <div><span>Horas trabajadas</span><strong>${worked.toFixed(2)} h</strong></div>
   <div><span>Permisos sin goce</span><strong>${permission.toFixed(2)} h</strong></div>
-  <div><span>Pago base calculado</span><strong>$${ordinary.toFixed(2)}</strong></div>
-  <div><span>Pago de horas extra</span><strong>$${overtime.toFixed(2)}</strong></div>
+  <div><span>Horas ordinarias / horas extra</span><strong>${Math.min(worked, Number(state.config.ordinaryFortnightHours || 88)).toFixed(2)} h / ${Math.max(0, worked - Number(state.config.ordinaryFortnightHours || 88)).toFixed(2)} h</strong></div>
+  <div><span>Pago base (88 h = $204.00)</span><strong>$${ordinary.toFixed(2)}</strong></div>
+  <div><span>Pago de horas extra ($${Number(state.config.extraRate || 3).toFixed(2)} por hora)</span><strong>$${overtime.toFixed(2)}</strong></div>
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
 </section>
 `}
@@ -644,7 +722,7 @@ async function addEmployee() {
 $('#addEmployee').onclick = addEmployee;
 $('#applyConfig').onclick = async () => { const next = {}; for (const id of Object.keys(defaults)) {
     const n = Number($('#' + id).value);
-    if (!Number.isFinite(n) || n < 0 || (id === 'paidDays' || id === 'normalHours') && n === 0)
+    if (!Number.isFinite(n) || n < 0 || id === 'ordinaryFortnightHours' && n === 0)
         return alert('Revisa los valores de pago.');
     next[id] = n;
 } try {

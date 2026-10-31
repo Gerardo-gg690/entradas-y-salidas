@@ -331,7 +331,7 @@
          </div>
          <div>
           <small>
-           Horas extra del día
+           Horas extra acumuladas en quincena
           </small>
           <strong id="extraToday">
            0h
@@ -528,13 +528,13 @@
              Extra
             </th>
             <th>
-             Pago base del día
+             Pago ordinario aplicado
             </th>
             <th>
              Pago extra
             </th>
             <th>
-             Total del día
+             Pago aplicado del día
             </th>
            </tr>
           </thead>
@@ -609,23 +609,15 @@
           Configuración de pago
          </h3>
          <label>
-          Salario mensual neto ($)
-          <input id="salary" min="0" step=".01" type="number" value="408"/>
-         </label>
-         <label>
-          Pago quincenal neto ($)
+          Pago base por quincena ($)
           <input id="halfSalary" min="0" step=".01" type="number" value="204"/>
          </label>
          <label>
-          Días pagados usados para calcular valor diario
-          <input id="paidDays" max="31" min="1" type="number" value="30"/>
+          Horas ordinarias por quincena
+          <input id="ordinaryFortnightHours" min="1" max="200" step="1" type="number" value="88"/>
          </label>
          <label>
-          Horas normales por día
-          <input id="normalHours" max="24" min="1" step=".5" type="number" value="8"/>
-         </label>
-         <label>
-          Valor hora extra ($)
+          Valor de cada hora extra ($)
           <input id="extraRate" min="0" step=".01" type="number" value="3.00"/>
          </label>
          <button class="primary" id="applyConfig">
@@ -687,14 +679,14 @@
   </script>
   <script src="firebase-bridge.js?v=timecore34" type="module" onerror="window.dispatchEvent(new Event('tc-load-error'));">
   </script>
-  <script src="script.js?v=timecore34">
+  <script src="script.js?v=timecore35">
   </script>
   <script src="ui-enhancements.js?v=timecore34">
   </script>
   <script src="location-alert.js?v=timecore34">
   </script>
   <script>
-   if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('./sw.js?v=timecore34', {updateViaCache:'none'}).catch(()=>{});
+   if('serviceWorker' in navigator && location.protocol!=='file:') navigator.serviceWorker.register('./sw.js?v=timecore35', {updateViaCache:'none'}).catch(()=>{});
   </script>
  </body>
 </html>

@@ -1,0 +1,17 @@
+TIMECORE BON HOUSE — VERSIÓN 35
+
+CAMBIOS
+1. Planilla quincenal: las primeras 88 horas se calculan sobre una base de $204.00. Cada hora que supere las 88 se paga a $3.00. Si se registran menos de 88 horas, el pago ordinario se prorratea proporcionalmente.
+2. Los reportes y boletas PDF muestran horas trabajadas, horas ordinarias, horas extra, pago base, pago extra y total.
+3. Panel de la jefa: botón “Editar horas” para cambiar entrada y salida de una jornada. Se puede repetir la corrección y cada cambio guarda motivo, valores anteriores/nuevos, usuario y fecha.
+4. Las jornadas de quincenas cerradas siguen bloqueadas.
+5. GPS: se conserva el radio estricto de 50 metros para entrada, salida y permisos. Se reducen los intentos y tiempos de espera; la validación exige que la precisión del GPS permita confirmar que el dispositivo está dentro del radio.
+6. Marcaciones: se elimina una lectura adicional de Firestore después de la transacción. La confirmación de la transacción se usa para actualizar la pantalla.
+7. Se actualiza el caché de la PWA a v35.
+
+IMPORTANTE
+- Publica TODO el contenido del ZIP, no solo script.js.
+- Publica también firestore.rules en Firebase Console > Firestore Database > Rules.
+- No se borran empleados, asistencias ni cierres existentes.
+- La ubicación se valida en el navegador y no constituye una protección antifraude infalible frente a manipulación técnica avanzada.
+- Prueba primero con una cuenta de empleado y una quincena de prueba antes de usar la planilla real.

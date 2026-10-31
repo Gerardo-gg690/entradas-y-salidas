@@ -1,0 +1,14 @@
+ACTUALIZACIÓN TIMECORE V35
+
+1. Haz una copia de seguridad del proyecto actual.
+2. Descomprime este ZIP.
+3. Reemplaza en GitHub Pages todos los archivos anteriores por los de esta carpeta, manteniendo la misma estructura y configuración Firebase.
+4. En Firebase Console abre Firestore Database > Rules. Reemplaza las reglas actuales por el contenido completo de firestore.rules y pulsa Publicar.
+5. Espera a que GitHub Pages termine de publicar. Cierra y vuelve a abrir TimeCore. Si sigue apareciendo la versión anterior, cierra la PWA/pestaña y recarga; el caché del service worker ahora usa v35.
+6. Inicia sesión como jefa y comprueba que aparezca “Editar horas” junto a una jornada. Haz una corrección de prueba y confirma que entrada, salida y cálculo se actualicen.
+7. Prueba con un empleado dentro del local: la entrada y la salida solo deben aceptarse cuando el GPS confirme que está dentro de 50 metros.
+8. Revisa una boleta PDF de prueba: las primeras 88 horas deben sumar $204.00; cada hora posterior agrega $3.00.
+
+NO BORRES documentos de Firestore. Las reglas nuevas conservan los documentos y habilitan la edición auditada de clock_in/clock_out por la administradora.
+
+CÁLCULO: pago ordinario = min(horas trabajadas, 88) × (204 / 88). Pago extra = max(horas trabajadas - 88, 0) × 3. El total es la suma de ambos. Los permisos sin goce se descuentan de las horas trabajadas.
