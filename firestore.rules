@@ -36,12 +36,12 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow update: if periodOpen(resource.data.date) && ((admin() && resource.data.clock_out == null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out','exitSource','exitEditedBy','exitEditedAt','exitReason'])
-        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['clock_out','exitSource','exitEditedBy','exitEditedAt','exitReason'])
         && request.resource.data.exitSource == 'admin'
         && request.resource.data.exitEditedBy == request.auth.uid
         && request.resource.data.exitEditedAt == request.time
         && request.resource.data.exitReason is string
         && request.resource.data.exitReason.size() >= 5
+        && request.resource.data.exitReason.size() <= 250
         && request.resource.data.clock_out is string)
         || (admin()
         && request.resource.data.employeeId == resource.data.employeeId
@@ -50,7 +50,6 @@ service cloud.firestore {
         && (request.resource.data.clock_out == null || request.resource.data.clock_out is string)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_in','clock_out','correctionHistory','lastCorrectionBy','lastCorrectionAt'])
         && request.resource.data.diff(resource.data).affectedKeys().hasAny(['clock_in','clock_out'])
-        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['correctionHistory','lastCorrectionBy','lastCorrectionAt'])
         && request.resource.data.lastCorrectionBy == request.auth.uid
         && request.resource.data.lastCorrectionAt == request.time
         && request.resource.data.correctionHistory is list
@@ -62,7 +61,6 @@ service cloud.firestore {
         && request.resource.data.employeeId == resource.data.employeeId
         && request.resource.data.date == resource.data.date
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_out','correctionHistory','lastCorrectionBy','lastCorrectionAt'])
-        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['clock_out','correctionHistory','lastCorrectionBy','lastCorrectionAt'])
         && request.resource.data.lastCorrectionBy == request.auth.uid
         && request.resource.data.lastCorrectionAt == request.time
         && request.resource.data.correctionHistory is list

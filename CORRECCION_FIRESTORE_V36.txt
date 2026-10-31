@@ -1,0 +1,22 @@
+TIMECORE BON HOUSE — CORRECCIÓN FIRESTORE V36
+
+CORRECCIÓN
+Se corrigieron las reglas de Firestore que podían rechazar salidas administrativas y correcciones repetidas cuando algunos campos de auditoría conservaban el mismo valor que ya tenían.
+
+QUÉ CAMBIÓ
+- La jefa puede registrar una salida administrativa cuando la jornada sigue abierta.
+- Se permiten correcciones repetidas de entrada y salida, conservando la validación del usuario administrador y el historial.
+- Se valida el contenido de los campos de auditoría aunque algún campo no cambie de valor.
+- No se amplían permisos de los empleados ni se modifica la restricción GPS de 50 metros en la aplicación.
+- No se borran ni modifican registros existentes.
+
+INSTALACIÓN OBLIGATORIA
+1. Firebase Console > Firestore Database > Rules.
+2. Reemplaza TODO el contenido por firestore.rules de esta carpeta.
+3. Pulsa Publicar.
+4. Espera la confirmación de publicación.
+5. Recarga la página de TimeCore con Ctrl+F5 y vuelve a probar.
+6. Publica también los archivos del ZIP en GitHub Pages para mantener la versión sincronizada.
+
+IMPORTANTE
+La regla de GPS de 50 metros se aplica en el navegador; estas reglas de Firestore controlan quién puede escribir documentos. Las reglas no pueden verificar por sí solas las coordenadas del dispositivo sin un mecanismo de servidor confiable.

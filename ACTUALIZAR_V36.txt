@@ -1,0 +1,7 @@
+VERSIÓN 36 — CORRECCIÓN DE PERMISOS
+
+Esta versión corrige un rechazo de Firestore al registrar salidas administrativas y al repetir correcciones de horarios.
+
+PUBLICA firestore.rules EN FIREBASE CONSOLE > FIRESTORE DATABASE > RULES Y PULSA PUBLICAR. Luego reemplaza los archivos del sitio por los de esta carpeta y recarga con Ctrl+F5.
+
+No borres colecciones ni documentos de Firebase. Se conserva la validación de ubicación de 50 metros de la aplicación.
