@@ -1,0 +1,19 @@
+TIMECORE BON HOUSE — VERSIÓN 39
+
+CORRECCIÓN DEL CÁLCULO QUINCENAL
+- El pago base quincenal se calcula como un importe fijo de $204.00 (15 × $13.60) cuando existen marcaciones en el período.
+- Ya no se reduce el sueldo base quincenal a $13.60 por cada día que tenga una marcación.
+- Las horas trabajadas se acumulan cronológicamente; las primeras 88 horas son ordinarias y únicamente el excedente genera horas extras.
+- Las horas extras se pagan a $3.00 por hora, proporcional por minutos.
+- La boleta separa detalle diario de horas, total de horas trabajadas, límite ordinario, horas extras y resumen de pago.
+- Se actualizó la versión de caché y los parámetros de carga para evitar conservar el JavaScript anterior.
+
+EJEMPLO DE COMPROBACIÓN
+- Total trabajado: 91 h 30 min.
+- Horas ordinarias: 88 h 00 min.
+- Horas extras: 3 h 30 min.
+- Pago base: $204.00.
+- Pago extra: $10.50.
+- Total: $214.50.
+
+No se modificaron Firestore ni sus reglas.

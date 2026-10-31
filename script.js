@@ -50,7 +50,7 @@ function periodPayroll(employeeId, start, end) {
     const extraRate = Math.max(0, Number(state.config.extraRate) || 3);
     const rows = state.attendance.filter(r => r.employeeId === employeeId && r.date >= start && r.date <= end && r.clock_in && r.clock_out)
         .sort((a, b) => a.date.localeCompare(b.date));
-    let hours = 0, ordinaryHours = 0, extraHours = 0, basePaid = 0;
+    let hours = 0, ordinaryHours = 0, extraHours = 0;
     const byDate = new Map();
     for (const row of rows) {
         const h = calc(row).h;
@@ -59,12 +59,14 @@ function periodPayroll(employeeId, start, end) {
         const extra = Math.max(0, h - ordinary);
         // El sueldo ordinario se paga por día: $13.60, hasta $204 por quincena.
         // Las horas/minutos solo generan extra cuando el acumulado cruza las 88 h.
-        const base = Math.min(dailyPay, Math.max(0, basePay - basePaid));
+        const base = Math.min(dailyPay, basePay); // Referencia diaria para el panel; el total quincenal usa el sueldo base completo.
         const extraPay = extra * extraRate;
-        hours += h; ordinaryHours += ordinary; extraHours += extra; basePaid += base;
+        hours += h; ordinaryHours += ordinary; extraHours += extra;
         byDate.set(row.date, { h, ordinary, extra, base, extraPay, total: base + extraPay });
     }
-    const base = Number(Math.min(basePay, basePaid).toFixed(2));
+    // El sueldo base acordado es fijo por quincena: $204.00 (15 × $13.60),
+    // no se reduce según la cantidad de días que tengan marcación.
+    const base = rows.length ? Number(basePay.toFixed(2)) : 0;
     const overtime = Number((extraHours * extraRate).toFixed(2));
     return { hours, ordinaryHours, extraHours, base, overtime, total: Number((base + overtime).toFixed(2)), byDate };
 }
@@ -599,7 +601,7 @@ ${isPayslip ? `
     <tr><td>Total de horas trabajadas en la quincena</td><td>${fmtHours(worked)}</td></tr>
     <tr><td>Límite de horas ordinarias</td><td>${fmtHours(Number(state.config.ordinaryFortnightHours || 88))}</td></tr>
     <tr><td>HORAS EXTRAS TOTALES (solo después de superar las 88 h)</td><td><strong>${fmtHours(payroll.extraHours)}</strong></td></tr>
-    <tr><td>Pago base diario acumulado (máximo $${Number(state.config.halfSalary || 204).toFixed(2)})</td><td>$${ordinary.toFixed(2)}</td></tr>
+    <tr><td>Pago base fijo de la quincena (15 × $13.60)</td><td>$${ordinary.toFixed(2)}</td></tr>
     <tr><td>Pago de horas extras (${fmtHours(payroll.extraHours)} × $${Number(state.config.extraRate || 3).toFixed(2)}/h)</td><td>$${overtime.toFixed(2)}</td></tr>
     <tr><td>Descuentos y ajustes</td><td>No configurados</td></tr>
   </tbody>
@@ -615,7 +617,7 @@ ${isPayslip ? `
   <div><span>Horas trabajadas</span><strong>${fmtHours(worked)}</strong></div>
   <div><span>Permisos sin goce</span><strong>${permission.toFixed(2)} h</strong></div>
   <div><span>Total de horas extras de la quincena</span><strong>${fmtHours(payroll.extraHours)}</strong></div>
-  <div><span>Pago diario ($13.60 × días trabajados; máximo $204.00)</span><strong>$${ordinary.toFixed(2)}</strong></div>
+  <div><span>Pago base fijo de la quincena (15 × $13.60)</span><strong>$${ordinary.toFixed(2)}</strong></div>
   <div><span>Pago de horas extra ($${Number(state.config.extraRate || 3).toFixed(2)} por hora)</span><strong>$${overtime.toFixed(2)}</strong></div>
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
 </section>
