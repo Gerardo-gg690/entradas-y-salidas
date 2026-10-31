@@ -1,0 +1,9 @@
+CAMBIOS V49 — EDICIÓN DIRECTA DE PERSONAL
+
+- El botón “Editar datos” abre una edición directa y sencilla para cambiar nombre y departamento/sucursal.
+- Se eliminó el formulario plegable que podía no mostrarse correctamente en ciertos dispositivos o por estilos en caché.
+- Al guardar, solo se actualizan name y dept del documento del empleado; no se modifica usuario, contraseña, asistencia ni pagos históricos.
+- Si Firebase rechaza el guardado por permisos, aparece un mensaje que indica publicar firestore.rules.
+- Se actualizó la versión de caché y la referencia del script para forzar la carga del código nuevo.
+
+IMPORTANTE: despliega firestore.rules incluido en esta carpeta en Firebase Console > Firestore Database > Rules. Después reemplaza todos los archivos del hosting por los de esta carpeta.
