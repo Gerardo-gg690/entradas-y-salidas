@@ -1,0 +1,9 @@
+CORRECCIÓN V45 — PRESENTACIÓN DIARIA DEL PDF CON HORAS EXTRAS QUINCENALES
+
+- Se mantiene la regla de nómina: las primeras 88 horas acumuladas en la quincena se pagan como ordinarias; únicamente el excedente se paga como hora extra.
+- No se reinicia el conteo de horas al comenzar un nuevo día.
+- El reporte PDF ahora separa por día: horas trabajadas, horas ordinarias, horas extras, permiso no pagado, pago ordinario, pago extra y total diario.
+- Se añade una explicación visible en el PDF para indicar que las horas extras empiezan únicamente cuando se supera el límite ordinario acumulado de la quincena.
+- El resumen final muestra por separado las horas ordinarias y extras y sus respectivos importes.
+- Se actualiza el nombre de caché del service worker para que los dispositivos descarguen los archivos de esta versión.
+- La lógica de cálculo de nómina no cambia en esta versión.

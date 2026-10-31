@@ -1,0 +1,9 @@
+CORRECCIÓN V46 — VALOR DIARIO CORRECTO EN EL PDF
+
+- Se mantiene el sueldo base quincenal general de $204 y el límite de 88 horas ordinarias acumuladas.
+- Se mantiene la tarifa de $3.00 por cada hora que exceda las 88 horas acumuladas en la quincena.
+- Se corrige el pago ordinario mostrado en cada fila diaria: se calcula con el valor diario distribuido entre 15 días y 8 horas (para $204 quincenales equivale a $1.70 por hora; 8 horas = $13.60).
+- El resumen separa el pago de horas ordinarias efectivamente laboradas del complemento necesario para completar el sueldo base proporcional de la quincena.
+- El total quincenal sigue siendo el sueldo base proporcional por las horas ordinarias acumuladas más el pago de horas extras.
+- Se aplica el mismo desglose en el reporte y en la boleta PDF.
+- Se actualiza la caché del service worker a v46.

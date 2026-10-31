@@ -48,6 +48,9 @@ function periodPayroll(employeeId, start, end) {
     // Un único sueldo base quincenal para todo el personal; se ignoran valores individuales antiguos.
     const basePay = Math.max(0, Number(state.config.halfSalary ?? defaults.halfSalary));
     const ordinaryHourlyRate = basePay / cap;
+    // Para el detalle diario: sueldo quincenal distribuido entre 15 días × 8 horas.
+    // Así una jornada completa de 8 h muestra $13.60 cuando el sueldo quincenal es $204.
+    const dailyOrdinaryHourlyRate = basePay / 120;
     const extraRate = Math.max(0, Number(state.config.extraRate ?? defaults.extraRate));
     const rows = state.attendance.filter(r => r.employeeId === employeeId && r.date >= start && r.date <= end && r.clock_in && r.clock_out)
         .sort((a, b) => a.date.localeCompare(b.date));
@@ -60,7 +63,7 @@ function periodPayroll(employeeId, start, end) {
         const extra = Math.max(0, h - ordinary);
         // El pago ordinario se calcula proporcionalmente a las horas ordinarias acumuladas.
         // El sueldo configurado corresponde a completar el límite ordinario de la quincena.
-        const base = ordinary * ordinaryHourlyRate;
+        const base = Number((ordinary * dailyOrdinaryHourlyRate).toFixed(2));
         const extraPay = extra * extraRate;
         hours += h; ordinaryHours += ordinary; extraHours += extra;
         byDate.set(row.date, { h, ordinary, extra, base, extraPay, total: base + extraPay });
@@ -68,8 +71,10 @@ function periodPayroll(employeeId, start, end) {
     // Solo se paga la proporción de horas ordinarias realmente laboradas.
     // Al completar el límite configurado se alcanza el sueldo base quincenal configurado.
     const base = Number((ordinaryHours * ordinaryHourlyRate).toFixed(2));
+    const dailyOrdinaryPay = Number([...byDate.values()].reduce((sum, day) => sum + day.base, 0).toFixed(2));
+    const baseComplement = Number(Math.max(0, base - dailyOrdinaryPay).toFixed(2));
     const overtime = Number((extraHours * extraRate).toFixed(2));
-    return { hours, ordinaryHours, extraHours, base, overtime, total: Number((base + overtime).toFixed(2)), byDate };
+    return { hours, ordinaryHours, extraHours, base, dailyOrdinaryPay, baseComplement, overtime, total: Number((base + overtime).toFixed(2)), byDate };
 }
 function isOnPermission(r) { const b = r?.permissionBreaks || []; return b.length > 0 && !b[b.length - 1].end; }
 // El cierre de quincena usa una clave única YYYY-MM-DD_YYYY-MM-DD.
@@ -504,14 +509,21 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
         const payment = payroll.byDate.get(row.date) || { h: 0, extra: 0, total: 0 };
         const unpaidHours = permissionHours(row, row.clock_out || new Date().toISOString());
         permission += unpaidHours;
+        const dailyOrdinaryHours = Number(payment.ordinary || 0);
+        const dailyExtraHours = Number(payment.extra || 0);
+        const dailyOrdinaryPay = Number(payment.base || 0);
+        const dailyExtraPay = Number(payment.extraPay || 0);
         return `<tr>
       <td>${esc(row.date)}</td>
       <td>${esc(fmt(row.clock_in))}</td>
       <td>${esc(fmt(row.clock_out))}</td>
       <td class="num">${fmtHours(payment.h)}</td>
-      <td class="num">${fmtHours(payment.extra)}</td>
-      <td class="num">${fmtHours(unpaidHours)}</td>
-      <td class="num">$${payment.total.toFixed(2)}</td>
+      <td class="num">${fmtHours(dailyOrdinaryHours)}</td>
+      <td class="num">${fmtHours(dailyExtraHours)}</td>
+      <td class="num">${unpaidHours.toFixed(2)} h</td>
+      <td class="num">$${dailyOrdinaryPay.toFixed(2)}</td>
+      <td class="num">$${dailyExtraPay.toFixed(2)}</td>
+      <td class="num"><strong>$${Number(payment.total || 0).toFixed(2)}</strong></td>
     </tr>`;
     }).join('');
     // Dos documentos distintos: comprobante económico o reporte de marcaciones.
@@ -547,9 +559,10 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
   .label { display: block; font-size: 9px; letter-spacing: 1px; font-weight: 700; color: #718095; }
   .value { font-size: 12px; font-weight: 700; }
   h2 { font-size: 13px; color: #193e70; margin: 22px 0 8px; }
-  table { width: 100%; border-collapse: collapse; font-size: 10px; }
-  th { background: #193e70; color: white; text-align: left; padding: 9px 6px; }
-  td { padding: 9px 6px; border-bottom: 1px solid #dbe3ef; }
+  table { width: 100%; border-collapse: collapse; font-size: 8px; }
+  th { background: #193e70; color: white; text-align: left; padding: 7px 3px; }
+  td { padding: 7px 3px; border-bottom: 1px solid #dbe3ef; }
+  .daily-rule { margin: 0 0 10px; padding: 8px 10px; background: #f2f5fa; border-left: 3px solid #193e70; }
   tr:nth-child(even) td { background: #f5f8fc; }
   .num { text-align: right; white-space: nowrap; }
   .summary { margin-top: 20px; margin-left: auto; max-width: 320px; }
@@ -586,23 +599,27 @@ ${isPayslip ? `
   <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
   <tbody>
     <tr><td>HORAS EXTRAS TOTALES (solo después de superar el límite ordinario)</td><td><strong>${fmtHours(payroll.extraHours)}</strong></td></tr>
-    <tr><td>Pago por horas ordinarias laboradas</td><td>$${ordinary.toFixed(2)}</td></tr>
+    <tr><td>Pago diario de horas ordinarias (a $${(Number(state.config.halfSalary ?? defaults.halfSalary) / 120).toFixed(2)}/h)</td><td>$${payroll.dailyOrdinaryPay.toFixed(2)}</td></tr>
+    <tr><td>Complemento hasta sueldo base proporcional de la quincena</td><td>$${payroll.baseComplement.toFixed(2)}</td></tr>
     <tr><td>Pago de horas extras (${fmtHours(payroll.extraHours)} × $${Number(state.config.extraRate ?? defaults.extraRate).toFixed(2)}/h)</td><td>$${overtime.toFixed(2)}</td></tr>
     <tr><td>Descuentos y ajustes</td><td>No configurados</td></tr>
   </tbody>
 </table>
 <section class="summary"><div class="total"><span>TOTAL ESTIMADO A PAGAR</span><span>$${total.toFixed(2)}</span></div></section>
 ` : `
-<h2>Detalle de horas laborales y marcaciones</h2>
+<h2>Detalle diario de horas y pago</h2>
+<p class="notice daily-rule">Cálculo quincenal: las primeras ${Number(state.config.ordinaryFortnightHours ?? defaults.ordinaryFortnightHours)} horas acumuladas se pagan como ordinarias; solo el excedente se paga como extra. El total diario de horas ordinarias se calcula a $${(Number(state.config.halfSalary ?? defaults.halfSalary) / 120).toFixed(2)} por hora (con sueldo de $204, una jornada de 8 horas equivale a $13.60). El complemento de sueldo quincenal se muestra por separado en el resumen.</p>
 <table>
-<thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th class="num">Horas</th><th class="num">Extras</th><th class="num">Permiso no pagado</th><th class="num">Total</th></tr></thead>
-<tbody>${rows || '<tr><td colspan="7">Sin registros en este período.</td></tr>'}</tbody>
+<thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th class="num">Horas del día</th><th class="num">Ord.</th><th class="num">Extras</th><th class="num">Permiso</th><th class="num">Pago ord.</th><th class="num">Pago extra</th><th class="num">Total día</th></tr></thead>
+<tbody>${rows || '<tr><td colspan="10">Sin registros en este período.</td></tr>'}</tbody>
 </table>
 <section class="summary">
   <div><span>Horas trabajadas</span><strong>${fmtHours(worked)}</strong></div>
   <div><span>Permisos sin goce</span><strong>${permission.toFixed(2)} h</strong></div>
-  <div><span>Horas extras laboradas</span><strong>${fmtHours(payroll.extraHours)}</strong></div>
-  <div><span>Pago por horas ordinarias laboradas</span><strong>$${ordinary.toFixed(2)}</strong></div>
+  <div><span>Horas ordinarias (límite quincenal)</span><strong>${fmtHours(payroll.ordinaryHours)}</strong></div>
+  <div><span>Horas extras (después del límite)</span><strong>${fmtHours(payroll.extraHours)}</strong></div>
+  <div><span>Pago de horas ordinarias laboradas (a $${(Number(state.config.halfSalary ?? defaults.halfSalary) / 120).toFixed(2)}/h)</span><strong>$${payroll.dailyOrdinaryPay.toFixed(2)}</strong></div>
+  <div><span>Complemento hasta sueldo base proporcional</span><strong>$${payroll.baseComplement.toFixed(2)}</strong></div>
   <div><span>Pago de horas extra ($${Number(state.config.extraRate ?? defaults.extraRate).toFixed(2)} por hora)</span><strong>$${overtime.toFixed(2)}</strong></div>
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
 </section>
