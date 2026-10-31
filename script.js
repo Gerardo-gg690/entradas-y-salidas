@@ -453,9 +453,12 @@ function renderAdmin() {
     $('#formulaInfo').textContent = `Sueldo base general: $${Number(c.halfSalary ?? defaults.halfSalary).toFixed(2)} por quincena. Límite: ${Number(c.ordinaryFortnightHours ?? defaults.ordinaryFortnightHours)} h ordinarias · Hora extra: $${Number(c.extraRate ?? defaults.extraRate).toFixed(2)}.`;
     $('#activity').innerHTML = state.employees.map(e => { const r = record(e.id, selectedDate); return r?.clock_in ? `<div>${esc(e.name)} · Entrada ${fmt(r.clock_in)} · Salida ${fmt(r.clock_out)}</div>` : ''; }).join('') || '<p>No hay marcaciones en esta fecha.</p>';
     const list = $('#adminEmployees'); list.innerHTML = '';
+    if (!state.employees.length) {
+        list.innerHTML = '<p class="emptyEmployees">Todavía no hay empleados activos registrados.</p>';
+    }
     state.employees.forEach(e => {
         const div = document.createElement('div'); div.className = 'adminEmp';
-        div.innerHTML = `<div class="adminEmpInfo"><b>${esc(e.name)}</b><small>${esc(e.dept || 'Sin departamento')} · @${esc(e.username || '')}</small></div><div class="employee-actions"><button type="button" class="editEmployee">Editar</button><button type="button" class="deactivate">Desactivar</button></div><form class="employeeEditForm" hidden><label>Nombre completo<input name="name" maxlength="100" required value="${esc(e.name || '')}"></label><label>Departamento / sucursal<input name="dept" maxlength="80" required value="${esc(e.dept || '')}"></label><div class="employeeEditActions"><button type="submit" class="primary">Guardar cambios</button><button type="button" class="cancelEdit">Cancelar</button></div></form>`;
+        div.innerHTML = `<div class="adminEmpInfo"><b>${esc(e.name)}</b><small>${esc(e.dept || 'Sin departamento')} · @${esc(e.username || '')}</small></div><div class="employee-actions"><button type="button" class="editEmployee">✎ Editar datos</button><button type="button" class="deactivate">Desactivar</button></div><form class="employeeEditForm" hidden><label>Nombre completo<input name="name" maxlength="100" required value="${esc(e.name || '')}"></label><label>Departamento / sucursal<input name="dept" maxlength="80" required value="${esc(e.dept || '')}"></label><div class="employeeEditActions"><button type="submit" class="primary">Guardar cambios</button><button type="button" class="cancelEdit">Cancelar</button></div></form>`;
         const editForm = div.querySelector('.employeeEditForm');
         div.querySelector('.editEmployee').onclick = () => { editForm.hidden = !editForm.hidden; };
         div.querySelector('.cancelEdit').onclick = () => { editForm.hidden = true; };
@@ -467,8 +470,9 @@ function renderAdmin() {
             const save = editForm.querySelector('button[type="submit"]'); save.disabled = true;
             try {
                 await TC.setDoc(TC.doc(TC.db, 'employees', e.id), { name, dept }, { merge: true });
-                showError('✓ Datos del empleado actualizados. Su usuario, contraseña, asistencia e historial de pagos permanecen intactos.');
                 editForm.hidden = true;
+                showError('✓ Datos del empleado actualizados. Su usuario, contraseña, asistencia e historial de pagos permanecen intactos.');
+                renderAdmin();
             } catch (err) { alert('No se pudieron guardar los cambios: ' + errorText(err)); }
             finally { save.disabled = false; }
         };

@@ -2376,3 +2376,13 @@ input {
 .employeeEditForm input { width:100%; min-width:0; }
 .employeeEditActions { grid-column:1/-1; }
 @media(max-width:520px) { .employeeEditForm { grid-template-columns:1fr; } }
+
+
+/* v48: gestión de personal visible al entrar a Empleados */
+.employeeManagerHead { display:grid; gap:4px; margin:14px 0 8px; padding:12px 14px; border:1px solid rgba(87,167,255,.35); border-radius:12px; background:rgba(35,112,190,.10); }
+.employeeManagerHead strong { color:var(--text,#e8f1ff); font-size:.98rem; }
+.employeeManagerHead span { color:var(--muted,#94a3b8); font-size:.82rem; }
+.addEmployeeHead { margin:22px 0 8px; padding-top:14px; border-top:1px solid rgba(255,255,255,.10); font-weight:700; }
+.adminEmp .editEmployee { background:#174e8d; border:1px solid #3774bd; color:#fff; font-weight:700; }
+.adminEmp .editEmployee:hover { background:#2164ad; }
+.emptyEmployees { margin:0; padding:14px; color:var(--muted,#94a3b8); border:1px dashed rgba(255,255,255,.18); border-radius:10px; }

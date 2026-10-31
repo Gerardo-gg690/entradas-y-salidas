@@ -580,8 +580,14 @@
           Personal
          </h3>
          <p class="muted">
-          Agrega empleados y administra sus datos. El sueldo es general y se configura una sola vez para todo el personal.
+          Administra los datos del personal. Puedes cambiar nombre y departamento/sucursal sin crear otra cuenta ni perder el historial.
          </p>
+         <div class="employeeManagerHead">
+          <strong>Personal registrado</strong>
+          <span>Usa <b>Editar datos</b> en cada empleado para actualizar su información.</span>
+         </div>
+         <div class="adminEmployees" id="adminEmployees"></div>
+         <div class="addEmployeeHead">Agregar nuevo empleado</div>
          <label>
           Nombre completo
           <input id="newName" placeholder="Ej. Nombre Apellido"/>
@@ -601,8 +607,6 @@
          <button class="primary" id="addEmployee" type="button">
           Agregar empleado
          </button>
-         <div class="adminEmployees" id="adminEmployees">
-         </div>
         </div>
         <div class="panel" id="configPanel">
          <h3>
@@ -679,7 +683,7 @@
   </script>
   <script src="firebase-bridge.js?v=timecore34" type="module" onerror="window.dispatchEvent(new Event('tc-load-error'));">
   </script>
-  <script src="script.js?v=timecore47">
+  <script src="script.js?v=timecore48">
   </script>
   <script src="ui-enhancements.js?v=timecore34">
   </script>

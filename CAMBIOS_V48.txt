@@ -1,0 +1,10 @@
+CAMBIOS V48 — GESTIÓN DE PERSONAL VISIBLE
+
+- El listado de personal se muestra al inicio de la sección Empleados, antes del formulario para agregar nuevos empleados.
+- Cada empleado tiene un botón destacado “Editar datos”.
+- El formulario permite actualizar nombre y departamento/sucursal.
+- Se conserva usuario, contraseña, marcaciones e historial de pagos.
+- Se muestra un aviso cuando no hay empleados activos.
+- Se incrementó la versión de caché a v48.
+
+PUBLICACIÓN: reemplaza los archivos de la aplicación con los de esta carpeta y publica firestore.rules en Firebase Console > Firestore Database > Rules. Luego recarga la aplicación con Ctrl+F5 o cierra y vuelve a abrirla. Si solo se publica index.html, no se actualizará la función.
