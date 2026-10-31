@@ -1,0 +1,7 @@
+TIMECORE BON HOUSE — V40
+
+CAMBIOS SOLICITADOS EN LOS PDF:
+1. BOLETA DE PAGO: se eliminó el detalle diario de horas trabajadas (fechas, entradas, salidas y horas por día). La boleta conserva únicamente el resumen económico y el total de horas extras para el cálculo del pago.
+2. REPORTE QUINCENAL DE HORAS: en el resumen se muestra una línea explícita "Horas extras laboradas" con el total acumulado de horas extras del período.
+
+No se modificaron las reglas de Firestore ni la validación GPS.

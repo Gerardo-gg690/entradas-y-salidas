@@ -513,15 +513,6 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
       <td class="num">$${payment.total.toFixed(2)}</td>
     </tr>`;
     }).join('');
-    const payslipDetailRows = records.map(row => {
-        const payment = payroll.byDate.get(row.date) || { h: 0, extra: 0, base: 0, extraPay: 0, total: 0 };
-        return `<tr>
-          <td>${esc(row.date)}</td>
-          <td>${esc(fmt(row.clock_in))}</td>
-          <td>${esc(fmt(row.clock_out))}</td>
-          <td class="num">${fmtHours(payment.h)}</td>
-        </tr>`;
-    }).join('');
     // Dos documentos distintos: comprobante económico o reporte de marcaciones.
     // Nunca mezclamos el detalle de jornadas dentro de la boleta formal.
     const isPayslip = documentType === 'payslip';
@@ -589,12 +580,7 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
   <div><span class="label">FIN DEL PERÍODO</span><span class="value">${esc(end)}</span></div>
 </section>
 ${isPayslip ? `
-<section class="sectionHeading">1. DETALLE DE HORAS TRABAJADAS</section>
-<table>
-  <thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th class="num">Horas trabajadas ese día</th></tr></thead>
-  <tbody>${payslipDetailRows || '<tr><td colspan="4">Sin registros en este período.</td></tr>'}</tbody>
-</table>
-<section class="sectionHeading">2. RESUMEN DE HORAS EXTRAS Y PAGO</section>
+<section class="sectionHeading">RESUMEN DE PAGO Y HORAS EXTRAS</section>
 <table class="moneyTable">
   <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
   <tbody>
@@ -616,7 +602,7 @@ ${isPayslip ? `
 <section class="summary">
   <div><span>Horas trabajadas</span><strong>${fmtHours(worked)}</strong></div>
   <div><span>Permisos sin goce</span><strong>${permission.toFixed(2)} h</strong></div>
-  <div><span>Total de horas extras de la quincena</span><strong>${fmtHours(payroll.extraHours)}</strong></div>
+  <div><span>Horas extras laboradas</span><strong>${fmtHours(payroll.extraHours)}</strong></div>
   <div><span>Pago base fijo de la quincena (15 × $13.60)</span><strong>$${ordinary.toFixed(2)}</strong></div>
   <div><span>Pago de horas extra ($${Number(state.config.extraRate || 3).toFixed(2)} por hora)</span><strong>$${overtime.toFixed(2)}</strong></div>
   <div class="total"><span>TOTAL ESTIMADO</span><span>$${total.toFixed(2)}</span></div>
