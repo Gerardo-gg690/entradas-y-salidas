@@ -1,0 +1,10 @@
+CAMBIOS V50 — DISEÑO FORMAL DE BOLETA DE PAGO
+
+- Se rediseñó exclusivamente el PDF de la boleta de pago individual con una presentación empresarial sobria: azul marino, grises, jerarquía tipográfica y espacios más limpios.
+- Se separó visualmente el resumen de jornada del detalle de remuneración.
+- La boleta muestra horas trabajadas, ordinarias y extras en formato legible de horas y minutos.
+- Se conservan los importes y la función de cálculo existentes; este cambio es de presentación y claridad, no modifica reglas salariales ni registros.
+- El PDF de reporte quincenal de horas conserva su diseño anterior.
+- Se actualizó la versión del script y la caché del service worker a v50.
+
+Para publicar: reemplazar los archivos del hosting por los de esta carpeta. Si la aplicación ya está instalada, cerrar y volver a abrir o recargar para que tome la nueva versión.

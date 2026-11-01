@@ -574,6 +574,31 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
   .moneyTable { margin-top: 8px; font-size: 12px; }
   .moneyTable td { padding: 11px 12px; }
   .moneyTable td:last-child { text-align: right; font-weight: 700; }
+  /* Diseño exclusivo de la boleta: sobrio, corporativo y optimizado para una página. */
+  body.payslip { color: #202b3c; font-family: "Aptos", "Segoe UI", Arial, sans-serif; font-size: 11px; }
+  .payslip .top { border-bottom: 2px solid #183b63; padding: 0 0 13px; }
+  .payslip .brand { color: #183b63; font-size: 25px; letter-spacing: 2px; }
+  .payslip .tagline { font-size: 8px; letter-spacing: 1.6px; }
+  .payslip .brandIcon { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #d6dfeb; border-radius: 50%; color: #183b63; font-size: 17px; }
+  .payslip h1 { margin: 22px 0 3px; color: #183b63; font-size: 19px; letter-spacing: 1.7px; }
+  .payslip .subtitle { margin-bottom: 19px; font-size: 10px; }
+  .payslip .info { gap: 13px 22px; padding: 16px 18px; background: #fff; border: 1px solid #d9e1eb; border-top: 3px solid #183b63; border-radius: 3px; }
+  .payslip .label { margin-bottom: 3px; font-size: 8px; letter-spacing: 1.1px; color: #778397; }
+  .payslip .value { color: #26364b; font-size: 11px; }
+  .payslip .sectionHeading { margin-top: 21px; padding: 0 0 8px; background: transparent; border-bottom: 1px solid #d9e1eb; color: #183b63; font-size: 10px; letter-spacing: 1.2px; }
+  .payslip .moneyTable { margin-top: 7px; font-size: 10px; }
+  .payslip .moneyTable th { padding: 9px 11px; background: #eef2f7; color: #34465e; font-size: 8px; letter-spacing: .8px; }
+  .payslip .moneyTable td { padding: 10px 11px; border-bottom: 1px solid #e5eaf0; }
+  .payslip .moneyTable td:last-child { color: #243b58; font-variant-numeric: tabular-nums; }
+  .payslip .summary { max-width: 100%; margin-top: 17px; }
+  .payslip .summary .total { display: flex; align-items: center; justify-content: space-between; padding: 14px 17px; background: #183b63; border-radius: 3px; font-size: 10px; letter-spacing: .7px; }
+  .payslip .summary .total span:last-child { font-size: 21px; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+  .payslip .notice { margin-top: 15px; padding: 9px 11px; background: #f6f8fb; border-left: 2px solid #a8b6c8; font-size: 8px; line-height: 1.45; }
+  .payslip .signatures { margin-top: 55px; gap: 65px; }
+  .payslip .signatures div { width: 40%; border-color: #8794a5; color: #566477; font-size: 9px; }
+  .payslip footer { margin-top: 22px; padding-top: 8px; text-align: center; font-size: 8px; letter-spacing: .2px; }
+  .payslip .print-actions button { border-radius: 4px; }
+  @media print { .payslip .info, .payslip .moneyTable, .payslip .summary, .payslip .signatures { break-inside: avoid; } }
   .top { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #193e70; padding-bottom: 18px; }
   .brand { font-size: 24px; font-weight: 800; letter-spacing: 1px; }
   .tagline { font-size: 10px; letter-spacing: 2px; color: #66768c; }
@@ -603,7 +628,7 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
   @media print { .print-actions { display: none !important; } .top, .info, .summary, .signatures, table { break-inside: avoid; } }
 </style>
 </head>
-<body>
+<body class="${isPayslip ? 'payslip' : 'attendance-report'}">
 <header class="top">
   <div><div class="brand">BON HOUSE</div><div class="tagline">CAFETERÍA · COMPROBANTE DE PLANILLA</div></div>
   <div class="brandIcon">☕</div>
@@ -619,15 +644,19 @@ function exportFortnight(employee, chosenRange = null, documentType = "report") 
   <div><span class="label">FIN DEL PERÍODO</span><span class="value">${esc(end)}</span></div>
 </section>
 ${isPayslip ? `
-<section class="sectionHeading">RESUMEN DE PAGO Y HORAS EXTRAS</section>
+<section class="sectionHeading">RESUMEN DE JORNADA</section>
+<table class="moneyTable">
+  <thead><tr><th>HORAS TRABAJADAS</th><th>HORAS ORDINARIAS</th><th>HORAS EXTRAS</th><th class="num">TARIFA EXTRA</th></tr></thead>
+  <tbody><tr><td>${fmtHours(worked)}</td><td>${fmtHours(payroll.ordinaryHours)}</td><td>${fmtHours(payroll.extraHours)}</td><td class="num">$${Number(state.config.extraRate ?? defaults.extraRate).toFixed(2)} / h</td></tr></tbody>
+</table>
+<section class="sectionHeading">DETALLE DE REMUNERACIÓN</section>
 <table class="moneyTable">
   <thead><tr><th>CONCEPTO</th><th class="num">IMPORTE (USD)</th></tr></thead>
   <tbody>
-    <tr><td>HORAS EXTRAS TOTALES (solo después de superar el límite ordinario)</td><td><strong>${fmtHours(payroll.extraHours)}</strong></td></tr>
-    <tr><td>Pago diario de horas ordinarias (a $${(Number(state.config.halfSalary ?? defaults.halfSalary) / 120).toFixed(2)}/h)</td><td>$${payroll.dailyOrdinaryPay.toFixed(2)}</td></tr>
-    <tr><td>Complemento hasta sueldo base proporcional de la quincena</td><td>$${payroll.baseComplement.toFixed(2)}</td></tr>
+    <tr><td>Pago de horas ordinarias laboradas</td><td>$${payroll.dailyOrdinaryPay.toFixed(2)}</td></tr>
+    <tr><td>Complemento del sueldo base proporcional de la quincena</td><td>$${payroll.baseComplement.toFixed(2)}</td></tr>
     <tr><td>Pago de horas extras (${fmtHours(payroll.extraHours)} × $${Number(state.config.extraRate ?? defaults.extraRate).toFixed(2)}/h)</td><td>$${overtime.toFixed(2)}</td></tr>
-    <tr><td>Descuentos y ajustes</td><td>No configurados</td></tr>
+    <tr><td>Descuentos y ajustes registrados</td><td>No configurados</td></tr>
   </tbody>
 </table>
 <section class="summary"><div class="total"><span>TOTAL ESTIMADO A PAGAR</span><span>$${total.toFixed(2)}</span></div></section>
