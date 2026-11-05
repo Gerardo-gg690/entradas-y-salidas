@@ -2386,3 +2386,48 @@ input {
 .adminEmp .editEmployee { background:#174e8d; border:1px solid #3774bd; color:#fff; font-weight:700; }
 .adminEmp .editEmployee:hover { background:#2164ad; }
 .emptyEmployees { margin:0; padding:14px; color:var(--muted,#94a3b8); border:1px dashed rgba(255,255,255,.18); border-radius:10px; }
+
+/* TIMECORE 51 · nueva presentación de la pantalla de marcación del empleado */
+#employeeView { max-width: 1120px; margin: 0 auto; }
+#employeeView .employee-clockbar { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:0 0 22px; padding:8px 0 2px; }
+.employee-clockcopy h2 { margin:0 0 5px; font-size:clamp(20px,2.2vw,27px); color:var(--text); }
+.employee-clockcopy p { margin:0; color:var(--muted); text-transform:capitalize; }
+#employeeView .employee-live-clock { font-size:clamp(38px,6vw,66px); line-height:1; font-weight:800; letter-spacing:-2px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.employee-welcome { display:flex; align-items:center; gap:18px; padding:14px 16px; margin-bottom:16px; border:1px solid var(--line); border-radius:14px; background:linear-gradient(120deg,#101b2a,#111a27); }
+.employee-welcome-label { color:var(--cyan); font-size:12px; font-weight:700; letter-spacing:.5px; }
+.employee-welcome-name { flex:1; min-width:0; padding:12px 14px; border:1px solid #34455e; border-radius:10px; color:var(--text); background:#0a1421; font-size:15px; }
+#employeeView .emptyIntro { margin:12px 0; }
+#employeeView .employee-panels { display:grid; grid-template-columns:1fr; gap:14px; }
+#employeeView .attendance-card { width:100%; padding:20px; border-radius:17px; background:linear-gradient(145deg,#14263c,#0a1422); border:1px solid #315074; box-shadow:0 16px 42px #0005; }
+.attendance-identity { display:flex; align-items:center; gap:13px; padding-bottom:17px; border-bottom:1px solid #ffffff14; }
+.attendance-identity h3 { margin:0 0 3px; font-size:18px; }
+.attendance-identity p { margin:0 0 7px; color:var(--muted); }
+.attendance-identity .avatar { margin:0; width:48px; height:48px; display:grid; place-items:center; flex:none; }
+.attendance-identity .status { display:inline-flex; margin:0; }
+.attendance-actions { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
+.attendance-action-panel { min-width:0; min-height:220px; padding:18px; border:1px solid #315074; border-radius:15px; background:linear-gradient(145deg,#172b42,#101e30); }
+.attendance-action-panel h3 { margin:0 0 6px; font-size:17px; color:var(--text); }
+.attendance-action-panel p { margin:0 0 15px; color:#a9bdd5; font-size:14px; line-height:1.5; }
+.permission-panel { border-color:#526ca0; background:linear-gradient(145deg,#202744,#151d34); }
+.permission-panel h3 { color:#a9c8ff; }
+.attendance-button-row { display:flex; flex-wrap:wrap; gap:10px; }
+.attendance-action-panel button { min-height:52px; padding:12px 18px; border-radius:11px; font-weight:750; flex:1 1 145px; }
+.attendance-action-panel .normal-entry { background:linear-gradient(120deg,#126de1,#0954ac); border:1px solid #3381d5; color:white; }
+.attendance-action-panel .normal-entry:disabled { opacity:.55; cursor:not-allowed; }
+.attendance-action-panel .permission-action { background:linear-gradient(120deg,#315caa,#284583); border:1px solid #668bd2; color:white; }
+.permission-subject { display:flex; align-items:center; min-height:45px; margin:0 0 12px; padding:10px 13px; border:1px solid #40577e; border-radius:9px; background:#0b1423; color:#dce8ff; }
+.permission-unavailable { align-self:center; color:#a9bdd5; font-size:13px; }
+.attendance-help { margin:15px 0 0; color:#9fb1c8; font-size:12px; line-height:1.55; }
+.employee-footer-note { margin:17px 0; color:var(--muted); font-size:12px; text-align:center; }
+#employeeView .employee-syncbar { margin-top:16px; }
+#employeeView .admin-link { margin-top:12px; }
+@media(max-width:680px) {
+ #employeeView { padding-top:4px; }
+ #employeeView .employee-clockbar { align-items:flex-start; gap:10px; }
+ #employeeView .employee-live-clock { font-size:clamp(32px,9vw,48px); letter-spacing:-1.5px; }
+ .employee-welcome { align-items:flex-start; flex-direction:column; gap:7px; }
+ .employee-welcome-name { width:100%; }
+ .attendance-actions { grid-template-columns:1fr; }
+ .attendance-action-panel { min-height:0; padding:16px; }
+ .attendance-action-panel button { flex-basis:100%; }
+}

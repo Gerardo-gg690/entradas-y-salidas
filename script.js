@@ -26,7 +26,7 @@ function showError(message) {
     if (window.TimeCoreLocationAlert) window.TimeCoreLocationAlert.close();
     status.textContent = text;
 }
-function clock() { $('#clock').textContent = new Date().toLocaleString('es-SV', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+function clock() { const now = new Date(); const clockEl = $('#clock'); if (clockEl) clockEl.textContent = now.toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); const dateEl = $('#employeeDate'); if (dateEl) dateEl.textContent = now.toLocaleDateString('es-SV', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
 clock();
 setInterval(clock, 1000);
 function clearListeners() { unsubs.forEach(f => f()); unsubs = []; }
@@ -179,34 +179,32 @@ function renderEmployees() {
         return;
     }
     const e = profile;
-    if (!e)
-        return;
+    if (!e) return;
     const r = record(e.id, todayKey()), done = !!r?.clock_out, started = !!r?.clock_in, paused = isOnPermission(r);
+    $('#employeeWelcomeName').textContent = e.name;
     const card = document.createElement('article');
-    card.className = 'employee';
-    card.innerHTML = `<div class="avatar">${esc(e.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase())}</div><h3>${esc(e.name)}</h3><p>${esc(e.dept || 'Sin departamento')}</p><span class="status ${done ? 'done' : started ? 'working' : ''}">${done ? 'Turno finalizado' : paused ? 'Fuera con permiso · tiempo pausado' : started ? 'Jornada activa' : 'Sin entrada registrada'}</span><div class="tc-actions"></div>`;
-    const actions = card.querySelector('.tc-actions');
-    const normal = document.createElement('button');
-    normal.type = 'button';
-    normal.textContent = done ? 'Turno completado' : !started ? 'Marcar entrada' : paused ? 'Salida normal no disponible durante el permiso' : 'Marcar salida';
+    card.className = 'employee attendance-card';
+    const statusText = done ? 'Turno finalizado' : paused ? 'Permiso activo · tiempo pausado' : started ? 'Jornada activa' : 'Listo para iniciar tu jornada';
+    const statusClass = done ? 'done' : started ? 'working' : '';
+    card.innerHTML = `<div class="attendance-identity"><div class="avatar">${esc(e.name.split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase())}</div><div><h3>${esc(e.name)}</h3><p>${esc(e.dept || 'Bon House')}</p><span class="status ${statusClass}">${statusText}</span></div></div><div class="attendance-actions"><section class="attendance-action-panel normal-panel"><h3>Marcación normal</h3><p>Para tu jornada habitual de trabajo.</p><div class="attendance-button-row"><button type="button" class="normal-entry">${done ? 'Turno completado' : !started ? 'Marcar entrada' : paused ? 'Salida no disponible durante permiso' : 'Marcar salida'}</button></div></section><section class="attendance-action-panel permission-panel"><h3>Marcación con permiso</h3><p>Usa esta sección si tu entrada o salida cuenta con autorización.</p><div class="permission-subject" aria-label="Asunto del permiso">Asunto Personal</div><div class="attendance-button-row permission-buttons"></div></section></div><p class="attendance-help">${started ? `Entrada registrada: ${fmt(r.clock_in)}${r.clock_out ? ` · Salida: ${fmt(r.clock_out)}` : ''}` : 'Recuerda registrar tu entrada al comenzar tu jornada.'} Los permisos son sin goce de sueldo.</p>`;
+    const normal = card.querySelector('.normal-entry');
     normal.disabled = done || paused || markingInProgress;
     normal.onclick = markAttendance;
-    actions.append(normal);
+    const permissionActions = card.querySelector('.permission-buttons');
     if (started && !done) {
         const permission = document.createElement('button');
         permission.type = 'button';
+        permission.className = 'permission-action';
         permission.textContent = paused ? 'Entrada con permiso' : 'Salida con permiso';
-        permission.style.marginTop = '8px';
-        permission.style.background = paused ? '#117d68' : '#a65b24';
         permission.disabled = markingInProgress;
         permission.onclick = () => markPermission(paused ? 'return' : 'leave');
-        actions.append(permission);
+        permissionActions.append(permission);
+    } else {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'permission-unavailable';
+        placeholder.textContent = done ? 'Jornada finalizada' : 'Disponible después de marcar tu entrada';
+        permissionActions.append(placeholder);
     }
-    const info = document.createElement('p');
-    info.textContent = 'Marcaciones dentro de 50 m de Bon House. Los permisos son sin goce de sueldo.';
-    info.style.fontSize = '12px';
-    info.style.opacity = '.75';
-    card.append(info);
     grid.append(card);
 }
 function metersBetween(aLat, aLon, bLat, bLon) { const rad = Math.PI / 180, R = 6371000; const dLat = (bLat - aLat) * rad, dLon = (bLon - aLon) * rad; const h = Math.sin(dLat / 2) ** 2 + Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin(dLon / 2) ** 2; return 2 * R * Math.asin(Math.min(1, Math.sqrt(h))); }
