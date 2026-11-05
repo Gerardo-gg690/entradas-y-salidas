@@ -50,7 +50,8 @@ service cloud.firestore {
         && request.resource.data.date == resource.data.date
         && request.resource.data.clock_in is string
         && (request.resource.data.clock_out == null || request.resource.data.clock_out is string)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_in','clock_out','correctionHistory','lastCorrectionBy','lastCorrectionAt'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['permissionBreaks']) || (request.resource.data.permissionBreaks is list && request.resource.data.permissionBreaks.size() <= 30))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clock_in','clock_out','permissionBreaks','correctionHistory','lastCorrectionBy','lastCorrectionAt'])
         && request.resource.data.diff(resource.data).affectedKeys().hasAny(['clock_in','clock_out'])
         && request.resource.data.lastCorrectionBy == request.auth.uid
         && request.resource.data.lastCorrectionAt == request.time

@@ -374,10 +374,33 @@ async function adminEditShift(e, r) {
     if (exitText.trim() && !exit) return alert('La salida no es válida. Usa AAAA-MM-DD HH:MM o déjala vacía.');
     if (exit && exit <= entry) return alert('La salida debe ser posterior a la entrada.');
     if (entry > new Date() || (exit && exit > new Date())) return alert('No se pueden registrar horas futuras.');
-    const reason = prompt('Motivo de la corrección (obligatorio):', 'Corrección de horario autorizada');
+    // Permite corregir también el tiempo de permiso no remunerado.
+    // El intervalo ajustado alimenta los cálculos del panel, planilla y PDF.
+    const currentPermission = permissionHours(r, r.clock_out || new Date().toISOString());
+    let permissionBreaks = Array.isArray(r.permissionBreaks) ? [...r.permissionBreaks] : [];
+    if (exit) {
+        const elapsedMinutes = Math.max(0, Math.round((exit - entry) / 60000));
+        const permissionDefault = Math.min(elapsedMinutes / 60, currentPermission).toFixed(2);
+        const permissionText = prompt(
+            `Horas con permiso NO pagadas para ${e.name} (puedes usar decimales).\nEscribe 0 si el permiso fue un error y deseas reconocer toda la jornada:`,
+            permissionDefault
+        );
+        if (permissionText === null) return;
+        const permissionValue = Number(permissionText.replace(',', '.'));
+        if (!Number.isFinite(permissionValue) || permissionValue < 0)
+            return alert('Escribe una cantidad válida de horas, por ejemplo 0, 1.5 o 2.');
+        const permissionMinutes = Math.round(permissionValue * 60);
+        if (permissionMinutes > elapsedMinutes)
+            return alert('Las horas con permiso no pueden superar la duración total de la jornada.');
+        permissionBreaks = permissionMinutes > 0
+            ? [{ start: new Date(exit.getTime() - permissionMinutes * 60000).toISOString(), end: exit.toISOString(), adjustedByAdmin: true }]
+            : [];
+    }
+    const reason = prompt('Motivo de la corrección (obligatorio):', 'Corrección de horario y permiso autorizada');
     if (reason === null) return;
     if (reason.trim().length < 5) return alert('Escribe un motivo de al menos 5 caracteres.');
-    if (!confirm(`¿Guardar estos horarios para ${e.name}?\nEntrada: ${entry.toLocaleString('es-SV')}\nSalida: ${exit ? exit.toLocaleString('es-SV') : 'Pendiente'}\n\nLa corrección quedará en el historial.`)) return;
+    const correctedPermission = exit ? permissionHours({ permissionBreaks }, exit.toISOString()) : currentPermission;
+    if (!confirm(`¿Guardar estos datos para ${e.name}?\nEntrada: ${entry.toLocaleString('es-SV')}\nSalida: ${exit ? exit.toLocaleString('es-SV') : 'Pendiente'}\nPermiso no pagado: ${exit ? correctedPermission.toFixed(2) + ' h' : 'sin cambios'}\n\nLa corrección quedará en el historial y se recalculará el pago.`)) return;
     try {
         const ref = TC.doc(TC.db, 'attendance', `${e.id}_${r.date}`);
         await TC.runTransaction(TC.db, async tx => {
@@ -386,7 +409,8 @@ async function adminEditShift(e, r) {
             const row = snap.data(), history = Array.isArray(row.correctionHistory) ? row.correctionHistory : [];
             tx.update(ref, {
                 clock_in: entry.toISOString(), clock_out: exit ? exit.toISOString() : null,
-                correctionHistory: [...history, { previousEntry: row.clock_in, previousExit: row.clock_out || null, newEntry: entry.toISOString(), newExit: exit ? exit.toISOString() : null, reason: reason.trim().slice(0,250), by: currentUser.uid, at: new Date().toISOString() }],
+                ...(exit ? { permissionBreaks } : {}),
+                correctionHistory: [...history, { previousEntry: row.clock_in, previousExit: row.clock_out || null, newEntry: entry.toISOString(), newExit: exit ? exit.toISOString() : null, previousPermissionBreaks: row.permissionBreaks || [], newPermissionBreaks: exit ? permissionBreaks : (row.permissionBreaks || []), reason: reason.trim().slice(0,250), by: currentUser.uid, at: new Date().toISOString() }],
                 lastCorrectionBy: currentUser.uid, lastCorrectionAt: TC.serverTimestamp()
             });
         });
