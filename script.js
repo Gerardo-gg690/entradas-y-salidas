@@ -305,10 +305,30 @@ async function markPermission(action) {
         buttons.forEach(b => b.disabled = false);
     }
 }
+let maintenanceNoticeShown = false;
+function showMaintenanceNotice() {
+    if (maintenanceNoticeShown || currentUser?.uid !== ADMIN_UID) return;
+    maintenanceNoticeShown = true;
+    const overlay = document.createElement('div');
+    overlay.className = 'tc-maintenance-overlay';
+    overlay.setAttribute('role', 'presentation');
+    overlay.innerHTML = `<section class="tc-maintenance-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tc-maintenance-title" aria-describedby="tc-maintenance-text">
+      <div class="tc-maintenance-symbol" aria-hidden="true">⚠️</div>
+      <h2 id="tc-maintenance-title">Mantenimiento requerido</h2>
+      <p id="tc-maintenance-text">El sistema TimeCore necesita mantenimiento preventivo para garantizar su correcto funcionamiento, seguridad y estabilidad.</p>
+      <p>Se recomienda contactar al encargado del sistema para programar el mantenimiento correspondiente.</p>
+      <button type="button" class="tc-maintenance-ok">Entendido</button>
+    </section>`;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    const button = overlay.querySelector('button');
+    button.addEventListener('click', close);
+    button.focus();
+}
 function openAdmin() { if (currentUser?.uid !== ADMIN_UID) {
     alert('Solo la administradora puede abrir este panel.');
     return;
-} $('#employeeView').classList.remove('active'); $('#adminView').classList.add('active'); renderAdmin(); }
+} $('#employeeView').classList.remove('active'); $('#adminView').classList.add('active'); renderAdmin(); showMaintenanceNotice(); }
 async function adminCloseShift(e, r) {
     if (currentUser?.uid !== ADMIN_UID || !r?.clock_in || r.clock_out)
         return;
@@ -729,7 +749,7 @@ $('#generatePayslip').onclick = () => {
     exportFortnight(employee, payslipRange(), "payslip");
 };
 /* AUTENTICACIÓN Y CONTROL DE ACCESO POR ROL. */
-async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#refreshTimeCore').hidden = !user; $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#employeeLogout').hidden = !user || user.uid === ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
+async function loadSession(user) { maintenanceNoticeShown = false; document.querySelector('.tc-maintenance-overlay')?.remove(); clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#refreshTimeCore').hidden = !user; $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#employeeLogout').hidden = !user || user.uid === ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
     showError('Inicia sesión para sincronizar');
     renderEmployees();
     return;

@@ -2431,3 +2431,12 @@ input {
  .attendance-action-panel { min-height:0; padding:16px; }
  .attendance-action-panel button { flex-basis:100%; }
 }
+
+/* Aviso de mantenimiento exclusivo para el panel de la administradora */
+.tc-maintenance-overlay { position:fixed; inset:0; z-index:99999; background:rgba(8,17,38,.70); display:flex; align-items:center; justify-content:center; padding:20px; }
+.tc-maintenance-dialog { width:min(100%,440px); box-sizing:border-box; padding:30px 28px; border-radius:18px; background:#fff; color:#17213b; box-shadow:0 24px 80px rgba(0,0,0,.3); text-align:center; font-family:inherit; }
+.tc-maintenance-symbol { font-size:40px; margin-bottom:12px; }
+.tc-maintenance-dialog h2 { margin:0 0 14px; font-size:24px; color:#14254a; }
+.tc-maintenance-dialog p { margin:0 0 14px; line-height:1.55; font-size:15px; }
+.tc-maintenance-ok { border:0; border-radius:10px; background:#193c78; color:#fff; padding:13px 34px; margin-top:10px; font:inherit; font-weight:700; cursor:pointer; }
+.tc-maintenance-ok:hover { background:#102c5b; }
