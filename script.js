@@ -317,7 +317,6 @@ function showMaintenanceNotice() {
       <div class="tc-maintenance-symbol" aria-hidden="true">⚠️</div>
       <h2 id="tc-maintenance-title">Aviso de mantenimiento preventivo</h2>
       <p id="tc-maintenance-text">Se recomienda programar una revisión técnica de TimeCore para comprobar su funcionamiento, seguridad y estabilidad.</p>
-      <p>El mantenimiento preventivo ayuda a reducir el riesgo de inconvenientes futuros. Este aviso no significa que el sistema esté fallando; puede continuar utilizándose normalmente.</p>
       <button type="button" class="tc-maintenance-ok">Entendido</button>
     </section>`;
     document.body.appendChild(overlay);
