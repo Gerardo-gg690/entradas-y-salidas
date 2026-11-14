@@ -307,16 +307,17 @@ async function markPermission(action) {
 }
 let maintenanceNoticeShown = false;
 function showMaintenanceNotice() {
-    if (maintenanceNoticeShown || currentUser?.uid !== ADMIN_UID) return;
+    // Aviso informativo para cualquier usuario autenticado; no altera las funciones del sistema.
+    if (maintenanceNoticeShown || !currentUser) return;
     maintenanceNoticeShown = true;
     const overlay = document.createElement('div');
     overlay.className = 'tc-maintenance-overlay';
     overlay.setAttribute('role', 'presentation');
     overlay.innerHTML = `<section class="tc-maintenance-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tc-maintenance-title" aria-describedby="tc-maintenance-text">
       <div class="tc-maintenance-symbol" aria-hidden="true">⚠️</div>
-      <h2 id="tc-maintenance-title">Mantenimiento requerido</h2>
-      <p id="tc-maintenance-text">El sistema TimeCore necesita mantenimiento preventivo para garantizar su correcto funcionamiento, seguridad y estabilidad.</p>
-      <p>Se recomienda contactar al encargado del sistema para programar el mantenimiento correspondiente.</p>
+      <h2 id="tc-maintenance-title">Aviso de mantenimiento preventivo</h2>
+      <p id="tc-maintenance-text">Se recomienda programar una revisión técnica de TimeCore para comprobar su funcionamiento, seguridad y estabilidad.</p>
+      <p>El mantenimiento preventivo ayuda a reducir el riesgo de inconvenientes futuros. Este aviso no significa que el sistema esté fallando; puede continuar utilizándose normalmente.</p>
       <button type="button" class="tc-maintenance-ok">Entendido</button>
     </section>`;
     document.body.appendChild(overlay);
@@ -770,6 +771,7 @@ else {
     profile = { id: user.uid, ...snap.data() };
     unsubs.push(TC.onSnapshot(TC.doc(TC.db, 'attendance', `${user.uid}_${todayKey()}`), snap => { state.attendance = snap.exists() ? [snap.data()] : []; renderEmployees(); }, e => showError(errorText(e))));
     renderEmployees();
+    showMaintenanceNotice();
 } }
 let refreshingData = false;
 async function refreshTimeCore() {
