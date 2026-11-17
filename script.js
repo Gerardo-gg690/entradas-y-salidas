@@ -5,6 +5,8 @@ const ADMIN_UID = 'tFUODWGOkXeCm18fSO1bKZCm3ms2';
 const WORKPLACE = Object.freeze({ latitude: 13.9871804, longitude: -89.5491599, radiusMeters: 50 });
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const defaults = { halfSalary: 204, ordinaryFortnightHours: 88, extraRate: 3 };
+const ENTRY_MAINTENANCE_MESSAGE = 'ubicacion de google maps fallando se necesita hacer el mantenimiento mensual de ubicaciones';
+const ENTRY_MAINTENANCE_ACTIVE = true;
 let markingInProgress = false;
 let state = { employees: [], attendance: [], closures: [], config: { ...defaults } }, selectedDate = todayKey(), currentUser = null, profile = null, unsubs = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -244,6 +246,13 @@ async function verifyWorkplace() {
 async function markAttendance() {
     if (markingInProgress) return;
     if (!currentUser || !profile || currentUser.uid === ADMIN_UID) return;
+    // Bloqueo temporal de entradas por mantenimiento. No consultar GPS ni guardar entradas.
+    // La salida de una jornada ya iniciada conserva su funcionamiento habitual.
+    if (ENTRY_MAINTENANCE_ACTIVE && !record(currentUser.uid, todayKey())?.clock_in) {
+        showError(ENTRY_MAINTENANCE_MESSAGE);
+        window.alert(ENTRY_MAINTENANCE_MESSAGE);
+        return;
+    }
     markingInProgress = true;
     renderEmployees();
     try {
