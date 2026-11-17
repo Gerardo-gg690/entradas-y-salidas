@@ -5,8 +5,6 @@ const ADMIN_UID = 'tFUODWGOkXeCm18fSO1bKZCm3ms2';
 const WORKPLACE = Object.freeze({ latitude: 13.9871804, longitude: -89.5491599, radiusMeters: 50 });
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const defaults = { halfSalary: 204, ordinaryFortnightHours: 88, extraRate: 3 };
-const ENTRY_MAINTENANCE_MESSAGE = 'ubicacion de google maps fallando se necesita hacer el mantenimiento mensual de ubicaciones';
-const ENTRY_MAINTENANCE_ACTIVE = true;
 let markingInProgress = false;
 let state = { employees: [], attendance: [], closures: [], config: { ...defaults } }, selectedDate = todayKey(), currentUser = null, profile = null, unsubs = [];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -246,13 +244,6 @@ async function verifyWorkplace() {
 async function markAttendance() {
     if (markingInProgress) return;
     if (!currentUser || !profile || currentUser.uid === ADMIN_UID) return;
-    // Bloqueo temporal de entradas por mantenimiento. No consultar GPS ni guardar entradas.
-    // La salida de una jornada ya iniciada conserva su funcionamiento habitual.
-    if (ENTRY_MAINTENANCE_ACTIVE && !record(currentUser.uid, todayKey())?.clock_in) {
-        showError(ENTRY_MAINTENANCE_MESSAGE);
-        window.alert(ENTRY_MAINTENANCE_MESSAGE);
-        return;
-    }
     markingInProgress = true;
     renderEmployees();
     try {
@@ -314,30 +305,10 @@ async function markPermission(action) {
         buttons.forEach(b => b.disabled = false);
     }
 }
-let maintenanceNoticeShown = false;
-function showMaintenanceNotice() {
-    // Aviso informativo para cualquier usuario autenticado; no altera las funciones del sistema.
-    if (maintenanceNoticeShown || !currentUser) return;
-    maintenanceNoticeShown = true;
-    const overlay = document.createElement('div');
-    overlay.className = 'tc-maintenance-overlay';
-    overlay.setAttribute('role', 'presentation');
-    overlay.innerHTML = `<section class="tc-maintenance-dialog" role="alertdialog" aria-modal="true" aria-labelledby="tc-maintenance-title" aria-describedby="tc-maintenance-text">
-      <div class="tc-maintenance-symbol" aria-hidden="true">⚠️</div>
-      <h2 id="tc-maintenance-title">Aviso de mantenimiento preventivo</h2>
-      <p id="tc-maintenance-text">Se recomienda programar una revisión técnica de TimeCore para comprobar su funcionamiento, seguridad y estabilidad.</p>
-      <button type="button" class="tc-maintenance-ok">Entendido</button>
-    </section>`;
-    document.body.appendChild(overlay);
-    const close = () => overlay.remove();
-    const button = overlay.querySelector('button');
-    button.addEventListener('click', close);
-    button.focus();
-}
 function openAdmin() { if (currentUser?.uid !== ADMIN_UID) {
     alert('Solo la administradora puede abrir este panel.');
     return;
-} $('#employeeView').classList.remove('active'); $('#adminView').classList.add('active'); renderAdmin(); showMaintenanceNotice(); }
+} $('#employeeView').classList.remove('active'); $('#adminView').classList.add('active'); renderAdmin(); }
 async function adminCloseShift(e, r) {
     if (currentUser?.uid !== ADMIN_UID || !r?.clock_in || r.clock_out)
         return;
@@ -758,7 +729,7 @@ $('#generatePayslip').onclick = () => {
     exportFortnight(employee, payslipRange(), "payslip");
 };
 /* AUTENTICACIÓN Y CONTROL DE ACCESO POR ROL. */
-async function loadSession(user) { maintenanceNoticeShown = false; document.querySelector('.tc-maintenance-overlay')?.remove(); clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#refreshTimeCore').hidden = !user; $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#employeeLogout').hidden = !user || user.uid === ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
+async function loadSession(user) { clearListeners(); currentUser = user; profile = null; state.employees = []; state.attendance = []; state.closures = []; $('#adminView').classList.remove('active'); $('#employeeView').classList.add('active'); $('#loginScreen').classList.toggle('hidden', !!user); $('#mainApp').classList.toggle('hidden', !user); $('#refreshTimeCore').hidden = !user; $('#adminSidebar').hidden = !user || user.uid !== ADMIN_UID; $('#employeeLogout').hidden = !user || user.uid === ADMIN_UID; $('#appShell').classList.toggle('employee-mode', !user || user.uid !== ADMIN_UID); $('#openAdmin').hidden = !user || user.uid !== ADMIN_UID; if (!user) {
     showError('Inicia sesión para sincronizar');
     renderEmployees();
     return;
@@ -779,7 +750,6 @@ else {
     profile = { id: user.uid, ...snap.data() };
     unsubs.push(TC.onSnapshot(TC.doc(TC.db, 'attendance', `${user.uid}_${todayKey()}`), snap => { state.attendance = snap.exists() ? [snap.data()] : []; renderEmployees(); }, e => showError(errorText(e))));
     renderEmployees();
-    showMaintenanceNotice();
 } }
 let refreshingData = false;
 async function refreshTimeCore() {
